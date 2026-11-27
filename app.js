@@ -590,9 +590,12 @@ const hemi = new THREE.HemisphereLight(0x5d7fa8, 0x3a2818, 0.85);
 scene.add(hemi);
 scene.add(new THREE.AmbientLight(0x30384a, 0.55));
 
-const fillWarm = new THREE.PointLight(0xffb070, 6, 9, 2);
-fillWarm.position.set(-2.6, 3.2, 3.2);
+const fillWarm = new THREE.PointLight(0xffb070, 9, 11, 2);
+fillWarm.position.set(-1.6, 3.0, 4.2);
 scene.add(fillWarm);
+const fillFront = new THREE.PointLight(0xbcd2ff, 6, 12, 2);
+fillFront.position.set(1.5, 2.4, 5.4);
+scene.add(fillFront);
 
 /* 달빛 창 광선 */
 const beamTex = texOf(256, 512, (c, w, h) => {
@@ -910,7 +913,7 @@ function buildCharacter(name, jamo, colorKey) {
   });
   const plateTex = new THREE.CanvasTexture(plateCanvas);
   plateTex.colorSpace = THREE.SRGBColorSpace;
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.14), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5, metalness: 0.2, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.55 }));
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.17), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5, metalness: 0.2, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.55 }));
   plate.name = 'plate';
   root.add(plate);
 
@@ -948,8 +951,8 @@ function placeChar(group, index, total, instant = false) {
   if (plate) {
     const pr = TABLE_R - 0.3;
     plate.position.set(Math.cos(a) * pr - tx, TABLE_Y + 0.09 - 1.16, Math.sin(a) * pr - tz);
-    plate.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)) - ry;
-    plate.rotation.x = -0.38;
+    plate.rotation.y = 0;
+    plate.rotation.x = -0.5;
   }
 }
 
@@ -1475,7 +1478,7 @@ function animate() {
   chandelier.userData.flames.forEach((f, i) => {
     f.scale.y = 0.9 + Math.sin(t * 7 + i) * 0.18;
   });
-  fillWarm.intensity = 5.4 + Math.sin(t * 1.6) * 0.5;
+  fillWarm.intensity = 8.4 + Math.sin(t * 1.6) * 0.7;
   wallSconces.forEach((s, i) => {
     s.userData.light.intensity = 4.6 + Math.sin(t * 7.3 + i * 2) * 0.9;
     s.userData.flame.scale.y = 0.92 + Math.sin(t * 8 + i) * 0.16;
