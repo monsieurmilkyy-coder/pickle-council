@@ -608,7 +608,7 @@ const beamTex = texOf(256, 512, (c, w, h) => {
   }
 });
 const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6.4), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.22, side: THREE.DoubleSide }));
-beam.position.set(0.2, 2.7, -3.5);
+beam.visible = false;
 beam.rotation.x = -0.46;
 world.add(beam);
 
@@ -901,24 +901,9 @@ function buildCharacter(name, jamo, colorKey) {
   hat.visible = false;
   root.add(hat);
 
-  // 이름표
-  const plateCanvas = canvasOf(256, 64, (c, w, h) => {
-    const g = c.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, '#e8d9b0'); g.addColorStop(1, '#c9a24a');
-    c.fillStyle = g; c.fillRect(0, 0, w, h);
-    c.strokeStyle = 'rgba(90,62,20,.7)'; c.lineWidth = 4; c.strokeRect(2, 2, w - 4, h - 4);
-    c.fillStyle = '#33230a'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = '700 30px "Noto Serif KR", Georgia, serif';
-    c.fillText(name.slice(0, 10), w / 2, h / 2 + 2);
-  });
-  const plateTex = new THREE.CanvasTexture(plateCanvas);
-  plateTex.colorSpace = THREE.SRGBColorSpace;
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.17), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5, metalness: 0.2, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.55 }));
-  plate.name = 'plate';
-  root.add(plate);
-
+  // (이름표는 3D에서 쓰지 않습니다 — 상단 접속자 칩과 캐릭터 색으로 구분)
   root.userData = {
-    name, jamo, colorKey, body, eyes, hat, plate, plateTex, mat,
+    name, jamo, colorKey, body, eyes, hat, mat,
     seat: 0, phase: rand(0, 6.28), talkUntil: 0, bubble: null, bubbleUntil: 0,
     blinkAt: rand(2, 5), y: 0
   };
