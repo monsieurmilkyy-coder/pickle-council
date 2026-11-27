@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=14" />
+<link rel="stylesheet" href="styles.css?v=16" />
 <script type="importmap">
 {
   "imports": {
@@ -68,6 +68,7 @@
   </section>
 
   <section class="pane" id="pane-chat" role="tabpanel">
+    <div class="chat-to" id="chatTo" aria-label="전서구 수신 대상"></div>
     <div class="chat-log" id="chatLog"></div>
     <form class="chat-form" id="chatForm">
       <input id="chatInput" type="text" maxlength="140" placeholder="전서구로 한 줄 남기기" autocomplete="off" />
@@ -110,17 +111,22 @@
     <div class="join-head">
       <span class="seal" aria-hidden="true">✦</span>
       <h2 id="joinTitle">원탁에 앉기</h2>
-      <p>이름과 자음, 색을 고르면 회의실에 자리가 생깁니다.</p>
+      <p>역할을 고르면 이름 · 모습 · 색이 한 번에 잡힙니다.</p>
     </div>
+
+    <div class="presets" id="presets" aria-label="빠른 역할 프리셋"></div>
 
     <label class="field">
       <span>이름</span>
-      <input id="joinName" type="text" maxlength="12" placeholder="예: 라마" autocomplete="off" />
+      <input id="joinName" type="text" maxlength="12" placeholder="예: 카르마" autocomplete="off" />
     </label>
 
     <div class="field">
-      <span>자음 모양</span>
-      <div class="jamo-grid" id="jamoGrid"></div>
+      <span>모습</span>
+      <div class="avatar-grid" id="avatarGrid"></div>
+      <div class="jamo-wrap" id="jamoWrap">
+        <div class="jamo-grid" id="jamoGrid"></div>
+      </div>
     </div>
 
     <div class="field">
@@ -137,13 +143,13 @@
       <button class="btn ghost" id="joinCancel" type="button">둘러보기만</button>
       <button class="btn brass big" id="joinGo" type="button">입장</button>
     </div>
-    <p class="join-note">링크 주소에 <code>?name=라마&amp;char=ㅂ&amp;color=blue</code>를 붙이면 바로 앉을 수도 있습니다.</p>
+    <p class="join-note">링크 주소에 <code>?name=카르마&amp;avatar=count&amp;color=gold</code>를 붙이면 바로 앉을 수도 있습니다.<br>모습 코드: <code>count</code> 백작 · <code>llama</code> 라마 · <code>hippo</code> 하마 · <code>jamo</code> 자음</p>
   </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p class="noscript">이 회의실은 자바스크립트가 필요합니다.</p></noscript>
 
-<script type="module" src="app.js?v=14"></script>
+<script type="module" src="app.js?v=16"></script>
 </body>
 </html>

@@ -4,8 +4,15 @@
 Firebase Realtime Database 무료(Spark) 인스턴스로 돌아갑니다.
 
 - **페이지**: https://monsieurmilkyy-coder.github.io/pickle-council/
-- **입장**: 이름 · 자음 모양 · 깃발 색 · 소속 메모를 정하면 원탁에 자리가 생깁니다.
-  주소에 `?name=라마&char=ㅂ&color=blue`를 붙이면 바로 앉습니다.
+- **입장**: 역할 프리셋(👑 카르마 · 🦙 라마 · 🦛 하마) 또는 이름 · 모습 · 깃발 색을 고르면 원탁에 자리가 생깁니다.
+  주소에 `?name=카르마&avatar=count&color=gold`를 붙이면 바로 앉습니다.
+  모습 코드: `count`(백작) · `llama`(라마) · `hippo`(하마) · `jamo`(자음 피클). 이름에 `카르마`/`라마`/`하마`가 들어가면 코드가 없어도 그 모습으로 앉습니다.
+
+### 카르마 바로가기
+
+- 👑 대표(카르마): `https://monsieurmilkyy-coder.github.io/pickle-council/?name=카르마&avatar=count&color=gold`
+- 🦙 라마: `?name=라마&avatar=llama&color=blue`
+- 🦛 하마: `?name=하마&avatar=hippo&color=violet`
 
 ## 되는 것
 
@@ -13,7 +20,7 @@ Firebase Realtime Database 무료(Spark) 인스턴스로 돌아갑니다.
 | --- | --- |
 | 실시간 접속자 | 원탁 의자에 앉은 피클들이 모든 브라우저에 즉시 나타나고, 탭을 닫으면 자리가 사라집니다. |
 | 합동 안건 | 안건 등록 · 담당 지정 · `대기 → 항해중 → 완료` 전환 · 삭제가 실시간 동기화. |
-| 전서구(채팅) | 한 줄 보고가 채팅 로그와 3D 말풍선에 동시에 뜹니다. |
+| 전서구(채팅) | 한 줄 보고가 채팅 로그와 3D 말풍선에 동시에 뜹니다. `전체 / @카르마 / @라마 / @하마` 대상 칩으로 받는 이를 지정해 보낼 수 있습니다(본문을 `@라마 …`로 시작해도 같은 효과). |
 | 시점 | 전체 회의실 / 해도 클로즈업 / 내 피클 시점, 마우스·터치 회전·줌. |
 
 ## 구조
@@ -27,17 +34,31 @@ app.js           three.js 장면 + Firebase 실시간 로직
 ### 3D 장면
 three.js r169(ESM CDN)로 전부 절차적으로 만듭니다. 목재 바닥, 벽난로, 황동 촛대,
 샹들리에, 창밖 밤바다와 달, 책장, 러그, 그리고 원탁 위의 양피지 해도 · 나침반 ·
-지구본 · 범선 미니어처 · 깃펜 · 밀랍 인장. 캐릭터는 한글 자음(ㅂㅍㅋㅎㅁㄱㄴㄷㄹㅅㅇㅈ)을
-둥근 캡슐 획으로 세운 몸통에 눈·볼·입을 붙인 형태이고, 숨쉬기·깜빡임·말할 때 통통 튀기가 붙습니다.
+지구본 · 범선 미니어처 · 깃펜 · 밀랍 인장.
+
+캐릭터는 네 가지입니다. 모두 로우폴리(플랫 셰이딩) 구체·캡슐로 짜고, 숨쉬기·깜빡임·
+말할 때 통통 튀기가 붙습니다.
+
+| 모습 | 코드 | 생김새 |
+| --- | --- | --- |
+| 👑 백작 카르마 | `count` | 삼각모 + 망토 + 금장 단추·견장·모노클을 갖춘 백발 백작 |
+| 🦙 라마 | `llama` | 긴 목, 쫑긋한 두 귀, 폭신한 털 텍스처와 솜뭉치, 큰 반짝이는 눈 |
+| 🦛 하마 | `hippo` | 통통한 몸통, 둥근 큰 주둥이와 콧구멍, 작은 귀, 앞니, 큰 눈 |
+| ✨ 자음 피클 | `jamo` | 한글 자음(ㅂㅍㅋㅎㅁㄱㄴㄷㄹㅅㅇㅈ)을 둥근 캡슐 획으로 세운 기본형 |
+
+고른 깃발 색은 라마 스카프 · 하마 리본 · 백작 모자 띠처럼 각자의 소품 색으로 들어갑니다.
 
 ### 데이터 (Firebase Realtime Database · asia-southeast1)
 
 ```
 council/main/
-  seats/{clientId}   { name, jamo, color, owner, ts }   ← onDisconnect로 자동 제거
+  seats/{clientId}   { name, avatar, jamo, color, owner, ts }   ← onDisconnect로 자동 제거
   agenda/{pushId}    { title, owner, status, by, ts }
-  chat/{pushId}      { name, jamo, color, text, ts }
+  chat/{pushId}      { name, avatar, jamo, color, text, to, ts }  ← to = 받는 이 이름 또는 null(전체)
 ```
+
+`avatar`는 새로 붙은 필드라 예전 좌석/메시지에는 없습니다. 없으면 이름에서 추론하고
+(카르마→`count`, 라마→`llama`, 하마→`hippo`), 그것도 아니면 `jamo`로 그립니다.
 
 보안 규칙은 `council` 아래만 공개 읽기/쓰기이고 나머지 경로는 닫혀 있습니다.
 

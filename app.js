@@ -783,6 +783,103 @@ const JAMO_SHAPES = {
 };
 const CIRCLE_JAMO = { 'ㅇ': { x: 0, y: 0, r: 0.28 }, 'ㅎ': { x: 0, y: -0.16, r: 0.21 } };
 
+/* ── 6-1. 아바타 종류 ─────────────────────────────────────── */
+const AVATARS = [
+  { key: 'count', icon: '👑', label: '백작 카르마', hint: '삼각모 · 망토 · 금장' },
+  { key: 'llama', icon: '🦙', label: '라마', hint: '긴 목 · 폭신한 털' },
+  { key: 'hippo', icon: '🦛', label: '하마', hint: '둥근 주둥이 · 콧구멍' },
+  { key: 'jamo',  icon: '✨', label: '자음 피클', hint: '한글 획 기본형' }
+];
+const AVATAR_INFO = AVATARS.reduce((m, a) => (m[a.key] = a, m), {});
+
+function inferAvatarByName(name) {
+  const n = String(name || '');
+  if (/카르마/.test(n) || /karma/i.test(n)) return 'count';
+  if (/라마/.test(n) || /llama/i.test(n)) return 'llama';
+  if (/하마/.test(n) || /hippo/i.test(n)) return 'hippo';
+  return null;
+}
+/* 저장된 avatar → 이름 추론 → 자음 순으로 결정 (기존 데이터 하위 호환) */
+function resolveAvatar(name, avatar) {
+  const k = String(avatar || '').toLowerCase();
+  if (AVATAR_INFO[k]) return k;
+  return inferAvatarByName(name) || 'jamo';
+}
+function avatarIcon(name, avatar) {
+  const k = resolveAvatar(name, avatar);
+  return k === 'jamo' ? null : AVATAR_INFO[k].icon;
+}
+
+/* ── 6-2. 캐릭터 재료 · 헬퍼 ─────────────────────────────── */
+const EYE_MAT = new THREE.MeshPhysicalMaterial({
+  color: 0x171019, roughness: 0.05, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.04
+});
+const WHITE_MAT = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const BLUSH_MAT = new THREE.MeshBasicMaterial({ color: 0xf4788c, transparent: true, opacity: 0.42 });
+const MOUTH_MAT = new THREE.MeshBasicMaterial({ color: 0x2a1a16 });
+
+function matOf(hex, o = {}) {
+  return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.85, metalness: 0.02, flatShading: true, ...o });
+}
+function lowSph(r, mat, sx = 1, sy = 1, sz = 1, seg = 12, ring = 9) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, ring), mat);
+  m.scale.set(sx, sy, sz);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+/* 큰 반짝이는 눈: 검은 눈알 + 흰 하이라이트 두 점 */
+function addEyes(body, { x = 0.06, y = 0.3, z = 0.2, r = 0.048, sy = 1, sz = 0.86 } = {}) {
+  const eyes = [];
+  [-1, 1].forEach(s => {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), EYE_MAT);
+    e.position.set(s * x, y, z);
+    e.scale.set(1, sy, sz);
+    e.userData.baseY = sy;
+    body.add(e); eyes.push(e);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(r * 0.35, 8, 8), WHITE_MAT);
+    shine.position.set(s * x + r * 0.3, y + r * 0.34, z + r * 0.6);
+    body.add(shine);
+    const spark = new THREE.Mesh(new THREE.SphereGeometry(r * 0.17, 6, 6), WHITE_MAT);
+    spark.position.set(s * x - r * 0.3, y - r * 0.24, z + r * 0.68);
+    body.add(spark);
+  });
+  return eyes;
+}
+function addBlush(body, x, y, z, r = 0.04) {
+  [-1, 1].forEach(s => {
+    const b = new THREE.Mesh(new THREE.CircleGeometry(r, 16), BLUSH_MAT);
+    b.position.set(s * x, y, z);
+    b.scale.y = 0.68;
+    body.add(b);
+  });
+}
+function addSmile(body, x, y, z, r = 0.024) {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(r, 0.0085, 6, 14, Math.PI), MOUTH_MAT);
+  m.rotation.z = Math.PI;
+  m.position.set(x, y, z);
+  body.add(m);
+}
+
+/* 폭신한 라마 털 텍스처 */
+const woolTex = texOf(256, 256, (c, w, h) => {
+  c.fillStyle = '#fbf5e7'; c.fillRect(0, 0, w, h);
+  for (let i = 0; i < 620; i++) {
+    const x = Math.random() * w, y = Math.random() * h, r = rand(7, 24);
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    const dark = Math.random() < 0.55;
+    g.addColorStop(0, dark ? 'rgba(214,199,172,.40)' : 'rgba(255,255,255,.55)');
+    g.addColorStop(1, dark ? 'rgba(214,199,172,0)' : 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  }
+  for (let i = 0; i < 220; i++) {
+    c.strokeStyle = `rgba(206,190,162,${rand(0.08, 0.22)})`;
+    c.lineWidth = rand(0.7, 1.8);
+    const x = Math.random() * w, y = Math.random() * h;
+    c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + rand(-6, 6), y + rand(6, 16), x + rand(-8, 8), y + rand(14, 26)); c.stroke();
+  }
+}, 2, 2);
+
+/* ── 6-3. 자음 피클 (기본형) ─────────────────────────────── */
 function makeJamoMesh(jamo, mat) {
   const g = new THREE.Group();
   const strokes = JAMO_SHAPES[jamo] || JAMO_SHAPES['ㅂ'];
@@ -853,20 +950,17 @@ function makeBubble(text) {
   return sp;
 }
 
-function buildCharacter(name, jamo, colorKey) {
-  const col = colorOf(colorKey);
+/* 자음 피클: 한글 획 몸통 + 눈·볼·입 */
+function buildJamoPickle(jamo, col) {
+  const body = new THREE.Group();
   const mat = new THREE.MeshPhysicalMaterial({
     color: col.hex, roughness: 0.28, metalness: 0.06,
     clearcoat: 0.9, clearcoatRoughness: 0.25,
     sheen: 0.5, sheenColor: new THREE.Color(0xffffff),
     emissive: new THREE.Color(col.hex).multiplyScalar(0.12)
   });
-  const root = new THREE.Group();
-  const body = new THREE.Group();
   body.add(makeJamoMesh(jamo, mat));
-  root.add(body);
 
-  // 볼
   const blushMat = new THREE.MeshBasicMaterial({ color: 0xf26a7a, transparent: true, opacity: 0.45 });
   [-1, 1].forEach(s => {
     const b = new THREE.Mesh(new THREE.CircleGeometry(0.062, 14), blushMat);
@@ -875,40 +969,292 @@ function buildCharacter(name, jamo, colorKey) {
     body.add(b);
   });
 
-  // 눈
-  const eyeMat = new THREE.MeshPhysicalMaterial({ color: 0x14100c, roughness: 0.08, metalness: 0.1, clearcoat: 1 });
   const eyes = [];
   [-1, 1].forEach(s => {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.082, 18, 14), eyeMat);
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.082, 18, 14), EYE_MAT);
     e.position.set(s * 0.155, 0.12, 0.075);
     e.scale.set(1, 1.12, 0.65);
+    e.userData.baseY = 1.12;
     body.add(e);
-    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 8), WHITE_MAT);
     shine.position.set(s * 0.155 + 0.022, 0.155, 0.115);
     body.add(shine);
     eyes.push(e);
   });
-  // 입
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.011, 6, 14, Math.PI), new THREE.MeshBasicMaterial({ color: 0x2a1a10 }));
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.011, 6, 14, Math.PI), MOUTH_MAT);
   mouth.rotation.z = Math.PI; mouth.position.set(0, -0.02, 0.08);
   body.add(mouth);
 
-  // 작은 깃펜 모자 (왕관 대신)
+  return { body, eyes, mat };
+}
+
+/* ── 6-4. 🦙 라마 ─────────────────────────────────────────── */
+function buildLlama(col) {
+  const body = new THREE.Group();
+  const wool = matOf(0xfaf4e6, { map: woolTex, roughness: 0.96 });
+  const woolShade = matOf(0xe9dcc6, { roughness: 0.96 });
+  const muzzleMat = matOf(0xf3e3ce, { roughness: 0.9 });
+  const innerEar = matOf(0xf0ada7, { roughness: 0.9 });
+  const hoof = matOf(0x6d5a47, { roughness: 0.8 });
+  const accent = matOf(col.hex, { roughness: 0.5, metalness: 0.08 });
+
+  // 몸통 (폭신한 덩어리)
+  const torso = lowSph(0.27, wool, 1.02, 0.94, 1.16, 14, 10);
+  torso.position.set(0, -0.17, -0.03);
+  body.add(torso);
+  // 털 볼륨: 몸통 둘레에 솜뭉치
+  [[0.20, -0.09, 0.15], [-0.21, -0.05, 0.13], [0.16, -0.26, 0.21], [-0.15, -0.25, 0.21],
+   [0.19, -0.30, -0.15], [-0.19, -0.32, -0.13], [0, -0.02, -0.28], [0.11, 0.03, 0.19],
+   [-0.11, 0.02, -0.22], [0.02, -0.40, 0.06]].forEach(([x, y, z], i) => {
+    const p = lowSph(rand(0.085, 0.115), i % 3 ? wool : woolShade, 1, 0.95, 1, 8, 6);
+    p.position.set(x, y, z);
+    body.add(p);
+  });
+  // 다리
+  [[-0.11, 0.10], [0.11, 0.10], [-0.11, -0.17], [0.11, -0.17]].forEach(([x, z]) => {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.046, 0.15, 4, 8), woolShade);
+    leg.position.set(x, -0.40, z); leg.castShadow = true; body.add(leg);
+    const foot = lowSph(0.047, hoof, 1.1, 0.6, 1.15, 8, 6);
+    foot.position.set(x, -0.478, z + 0.005); body.add(foot);
+  });
+  // 목
+  const neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.074, 0.20, 4, 10), wool);
+  neck.position.set(0, 0.08, 0.05); neck.rotation.x = -0.17; neck.castShadow = true;
+  body.add(neck);
+  // 머리
+  const head = lowSph(0.135, wool, 1.0, 1.06, 0.94, 14, 10);
+  head.position.set(0, 0.34, 0.11);
+  body.add(head);
+  // 머리 위 솜
+  const tuft = lowSph(0.055, woolShade, 1, 0.8, 1, 8, 6);
+  tuft.position.set(0, 0.455, 0.10); body.add(tuft);
+  // 주둥이
+  const muzzle = lowSph(0.072, muzzleMat, 1.18, 0.9, 1.0, 12, 8);
+  muzzle.position.set(0, 0.285, 0.225); body.add(muzzle);
+  [-1, 1].forEach(s => {
+    const n = lowSph(0.014, hoof, 1, 1, 0.8, 6, 5);
+    n.position.set(s * 0.028, 0.30, 0.292); body.add(n);
+  });
+  // 쫑긋한 두 귀
+  [-1, 1].forEach(s => {
+    const outer = new THREE.Mesh(new THREE.CapsuleGeometry(0.033, 0.075, 4, 8), wool);
+    outer.position.set(s * 0.072, 0.50, 0.055);
+    outer.rotation.z = s * 0.27; outer.rotation.x = -0.12; outer.castShadow = true;
+    body.add(outer);
+    const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.05, 4, 8), innerEar);
+    inner.position.set(s * 0.077, 0.497, 0.077);
+    inner.rotation.z = s * 0.27; inner.rotation.x = -0.12;
+    body.add(inner);
+  });
+  const eyes = addEyes(body, { x: 0.063, y: 0.362, z: 0.198, r: 0.049, sy: 1.06 });
+  addBlush(body, 0.113, 0.30, 0.192, 0.042);
+  addSmile(body, 0, 0.243, 0.256, 0.023);
+  // 스카프 (고른 색)
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.104, 0.031, 8, 20), accent);
+  scarf.position.set(0, 0.19, 0.055);
+  scarf.rotation.x = Math.PI / 2 - 0.12;
+  scarf.castShadow = true;
+  body.add(scarf);
+  const knot = lowSph(0.036, accent, 1, 1, 1, 8, 6);
+  knot.position.set(0.098, 0.148, 0.128); body.add(knot);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.021, 0.085, 4, 8), accent);
+  tail.position.set(0.132, 0.088, 0.118); tail.rotation.z = 0.55; body.add(tail);
+
+  return { body, eyes, scale: 1.0 };
+}
+
+/* ── 6-5. 🦛 하마 ─────────────────────────────────────────── */
+function buildHippo(col) {
+  const body = new THREE.Group();
+  const skin = matOf(0xa79ec0, { roughness: 0.72 });
+  const skinDeep = matOf(0x8d84a8, { roughness: 0.75 });
+  const belly = matOf(0xc7bcd8, { roughness: 0.78 });
+  const snout = matOf(0xdccddd, { roughness: 0.7 });
+  const innerEar = matOf(0xe9a3b6, { roughness: 0.85 });
+  const dark = matOf(0x5b4a66, { roughness: 0.6 });
+  const tooth = matOf(0xfbf7ec, { roughness: 0.5 });
+  const accent = matOf(col.hex, { roughness: 0.5, metalness: 0.08 });
+
+  // 통통한 몸통
+  const torso = lowSph(0.29, skin, 1.22, 0.98, 1.04, 14, 10);
+  torso.position.set(0, -0.15, -0.01); body.add(torso);
+  const tummy = lowSph(0.2, belly, 1.1, 0.9, 0.62, 12, 8);
+  tummy.position.set(0, -0.18, 0.19); body.add(tummy);
+  // 짧은 다리
+  [[-0.14, 0.14], [0.14, 0.14], [-0.14, -0.14], [0.14, -0.14]].forEach(([x, z]) => {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.062, 0.07, 4, 8), skinDeep);
+    leg.position.set(x, -0.40, z); leg.castShadow = true; body.add(leg);
+  });
+  // 머리 (몸통과 이어진 둥근 덩어리)
+  const head = lowSph(0.225, skin, 1.08, 0.96, 1.02, 14, 10);
+  head.position.set(0, 0.18, 0.05); body.add(head);
+  // 큰 주둥이
+  const muzzle = lowSph(0.155, snout, 1.34, 0.84, 0.94, 14, 10);
+  muzzle.position.set(0, 0.115, 0.235); body.add(muzzle);
+  // 콧구멍
+  [-1, 1].forEach(s => {
+    const n = lowSph(0.031, dark, 1, 0.85, 1, 8, 6);
+    n.position.set(s * 0.062, 0.185, 0.352); body.add(n);
+  });
+  // 입 · 앞니
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 6, 16, Math.PI), MOUTH_MAT);
+  mouth.rotation.z = Math.PI; mouth.rotation.x = 0.25;
+  mouth.position.set(0, 0.088, 0.352); body.add(mouth);
+  [-1, 1].forEach(s => {
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.036, 0.02), tooth);
+    t.position.set(s * 0.02, 0.072, 0.352); t.rotation.z = s * 0.05; body.add(t);
+  });
+  // 작은 귀
+  [-1, 1].forEach(s => {
+    const e = lowSph(0.052, skinDeep, 1, 0.95, 0.65, 10, 8);
+    e.position.set(s * 0.192, 0.375, 0.015); e.rotation.z = s * -0.2; body.add(e);
+    const inner = lowSph(0.028, innerEar, 1, 1, 0.5, 8, 6);
+    inner.position.set(s * 0.198, 0.378, 0.05); body.add(inner);
+  });
+  const eyes = addEyes(body, { x: 0.10, y: 0.285, z: 0.198, r: 0.056, sy: 1.0 });
+  addBlush(body, 0.163, 0.215, 0.20, 0.045);
+  // 꼬리
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 8), skinDeep);
+  tail.position.set(0.04, -0.10, -0.31); tail.rotation.x = 1.15; body.add(tail);
+  // 색 리본 (고른 색)
+  const knotR = lowSph(0.03, accent, 1, 1, 1, 8, 6);
+  knotR.position.set(-0.145, 0.44, 0.06); body.add(knotR);
+  [-1, 1].forEach(s => {
+    const loop = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.075, 6), accent);
+    loop.position.set(-0.145 + s * 0.055, 0.452, 0.06);
+    loop.rotation.z = s * 1.35; body.add(loop);
+  });
+
+  return { body, eyes, scale: 1.08 };
+}
+
+/* ── 6-6. 👑 백작 카르마 ─────────────────────────────────── */
+function buildCount(col) {
+  const body = new THREE.Group();
+  const coat = matOf(0x22334c, { roughness: 0.74 });
+  const coatDeep = matOf(0x18243a, { roughness: 0.78 });
+  const capeMat = new THREE.MeshStandardMaterial({ color: 0x6d1f2c, roughness: 0.86, flatShading: true, side: THREE.DoubleSide });
+  const brassMat = matOf(0xd8b05a, { roughness: 0.32, metalness: 0.85, flatShading: false });
+  const accent = matOf(col.hex, { roughness: 0.35, metalness: 0.55 });
+  const skin = matOf(0xf4cfa8, { roughness: 0.62 });
+  const hair = matOf(0xf1eadf, { roughness: 0.9 });
+  const white = matOf(0xfaf6ec, { roughness: 0.85 });
+  const glass = new THREE.MeshPhysicalMaterial({ color: 0xcfe6f5, roughness: 0.06, metalness: 0, transparent: true, opacity: 0.35, transmission: 0.6 });
+
+  // 망토 (뒤를 감싸고 앞은 열림)
+  const capeMesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.235, 0.335, 0.48, 18, 1, true, Math.PI * 0.16, Math.PI * 1.68), capeMat);
+  capeMesh.position.set(0, -0.13, -0.02); capeMesh.castShadow = true; body.add(capeMesh);
+  const capeTrim = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.332, 0.339, 0.04, 18, 1, true, Math.PI * 0.16, Math.PI * 1.68), brassMat);
+  capeTrim.position.set(0, -0.35, -0.02); body.add(capeTrim);
+  // 코트
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.215, 0.36, 16, 1), coat);
+  torso.position.set(0, -0.12, 0); torso.castShadow = true; body.add(torso);
+  // 벨트 · 금장 단추
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.203, 0.212, 0.036, 16), brassMat);
+  belt.position.set(0, -0.205, 0); body.add(belt);
+  [[0.03, 0.155], [-0.05, 0.172], [-0.13, 0.19]].forEach(([y, z]) => {
+    const b = lowSph(0.017, brassMat, 1, 1, 0.7, 8, 6);
+    b.position.set(0, y, z); body.add(b);
+  });
+  // 옷깃(금장 라펠)
+  [-1, 1].forEach(s => {
+    const lapel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.02), brassMat);
+    lapel.position.set(s * 0.085, 0.0, 0.135);
+    lapel.rotation.z = s * 0.24; lapel.rotation.y = s * -0.35; body.add(lapel);
+  });
+  // 견장
+  [-1, 1].forEach(s => {
+    const ep = lowSph(0.055, brassMat, 1.25, 0.5, 1.0, 10, 8);
+    ep.position.set(s * 0.155, 0.055, 0.0); body.add(ep);
+  });
+  // 목 · 크라바트
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.062, 0.09, 10), skin);
+  neck.position.set(0, 0.115, 0.02); body.add(neck);
+  const cravat = lowSph(0.062, white, 1.25, 0.9, 0.75, 12, 8);
+  cravat.position.set(0, 0.10, 0.10); body.add(cravat);
+  // 머리
+  const head = lowSph(0.165, skin, 1.0, 1.02, 0.95, 16, 12);
+  head.position.set(0, 0.285, 0.005); body.add(head);
+  // 백발 (옆·뒤)
+  const hairBack = lowSph(0.13, hair, 1.06, 0.82, 0.8, 12, 9);
+  hairBack.position.set(0, 0.315, -0.10); body.add(hairBack);
+  [-1, 1].forEach(s => {
+    const curl = lowSph(0.062, hair, 0.9, 1.1, 0.85, 10, 8);
+    curl.position.set(s * 0.155, 0.245, -0.02); body.add(curl);
+  });
+  const eyes = addEyes(body, { x: 0.062, y: 0.30, z: 0.135, r: 0.042, sy: 1.02, sz: 0.8 });
+  addBlush(body, 0.105, 0.255, 0.135, 0.036);
+  // 코 · 미소 · 작은 콧수염
+  const nose = lowSph(0.018, matOf(0xe7b48f, { roughness: 0.7 }), 1, 0.8, 1, 8, 6);
+  nose.position.set(0, 0.272, 0.157); body.add(nose);
+  addSmile(body, 0, 0.238, 0.152, 0.02);
+  [-1, 1].forEach(s => {
+    const mo = lowSph(0.026, hair, 1.5, 0.5, 0.6, 8, 6);
+    mo.position.set(s * 0.03, 0.252, 0.15); mo.rotation.z = s * -0.25; body.add(mo);
+  });
+  // 외알 안경(모노클)
+  const mono = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.008, 6, 20), brassMat);
+  mono.position.set(0.062, 0.30, 0.157); body.add(mono);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), glass);
+  lens.position.set(0.062, 0.30, 0.154); body.add(lens);
+
+  // 삼각모
   const hat = new THREE.Group();
-  const brim = g3.cyl(0.14, 0.15, 0.02, M.brassDark, 16); hat.add(brim);
-  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.16, 6), new THREE.MeshStandardMaterial({ color: 0xf0e0b8, roughness: 0.9 }));
-  plume.position.set(0.03, 0.09, 0); plume.rotation.z = -0.4; hat.add(plume);
-  hat.position.set(0, 0.6, 0);
-  hat.visible = false;
-  root.add(hat);
+  hat.position.set(0, 0.40, 0.0); hat.rotation.x = -0.05;
+  const crown = lowSph(0.145, coatDeep, 1.02, 0.8, 1.02, 14, 10);
+  crown.position.y = 0.05; hat.add(crown);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.2, 0.022, 20), coatDeep);
+  brim.castShadow = true; hat.add(brim);
+  for (let i = 0; i < 3; i++) {
+    const a = i * (Math.PI * 2 / 3) + Math.PI / 2;
+    const pivot = new THREE.Group();
+    pivot.position.set(Math.cos(a) * 0.115, 0.045, Math.sin(a) * 0.115);
+    pivot.rotation.y = -a + Math.PI / 2;
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.026, 0.10), coatDeep);
+    wing.position.set(0, 0.0, 0.02);
+    wing.rotation.x = 0.72;
+    wing.castShadow = true;
+    pivot.add(wing);
+    const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.335, 0.012, 0.028), brassMat);
+    wingTrim.position.set(0, 0.015, 0.058);
+    wingTrim.rotation.x = 0.72;
+    pivot.add(wingTrim);
+    hat.add(pivot);
+  }
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.148, 0.014, 6, 24), accent);
+  band.rotation.x = Math.PI / 2; band.position.y = 0.012; hat.add(band);
+  const cockade = lowSph(0.026, accent, 1, 1, 0.55, 10, 8);
+  cockade.position.set(0, 0.075, 0.15); hat.add(cockade);
+  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.15, 6), white);
+  plume.position.set(-0.135, 0.15, -0.02); plume.rotation.z = 0.45; plume.rotation.x = -0.2; hat.add(plume);
+  body.add(hat);
+
+  return { body, eyes, scale: 1.06 };
+}
+
+function buildCharacter(name, jamo, colorKey, avatar) {
+  const col = colorOf(colorKey);
+  const kind = resolveAvatar(name, avatar);
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+  let built;
+  if (kind === 'llama') built = buildLlama(col);
+  else if (kind === 'hippo') built = buildHippo(col);
+  else if (kind === 'count') built = buildCount(col);
+  else built = buildJamoPickle(jamo, col);
+  body.add(built.body);
 
   // (이름표는 3D에서 쓰지 않습니다 — 상단 접속자 칩과 캐릭터 색으로 구분)
   root.userData = {
-    name, jamo, colorKey, body, eyes, hat, mat,
+    name, jamo, colorKey, avatar: kind, body, eyes: built.eyes, mat: built.mat || null,
     seat: 0, phase: rand(0, 6.28), talkUntil: 0, bubble: null, bubbleUntil: 0,
-    blinkAt: rand(2, 5), y: 0
+    blinkAt: rand(2, 5), y: 0, scale: built.scale || 1.1,
+    bubbleY: kind === 'count' ? 0.74 : kind === 'hippo' ? 0.57 : kind === 'llama' ? 0.64 : 0.62
   };
-  root.scale.setScalar(1.14);
+  root.scale.setScalar(root.userData.scale);
   return root;
 }
 
@@ -950,10 +1296,11 @@ function syncCharacters(seatMap) {
   entries.forEach(([id, v], i) => {
     seen.add(id);
     const jamo = JAMO_POOL.includes(v.jamo) ? v.jamo : 'ㅂ';
+    const avatar = resolveAvatar(v.name, v.avatar);
     let c = characters.get(id);
-    if (!c || c.userData.jamo !== jamo || c.userData.colorKey !== v.color || c.userData.name !== v.name) {
+    if (!c || c.userData.jamo !== jamo || c.userData.colorKey !== v.color || c.userData.name !== v.name || c.userData.avatar !== avatar) {
       if (c) charLayer.remove(c);
-      c = buildCharacter(v.name, jamo, v.color || 'blue');
+      c = buildCharacter(v.name, jamo, v.color || 'blue', avatar);
       c.userData.id = id;
       charLayer.add(c);
       characters.set(id, c);
@@ -976,7 +1323,7 @@ function speak(id, text) {
   if (!c) return;
   if (c.userData.bubble) { c.remove(c.userData.bubble); c.userData.bubble.material.map.dispose(); }
   const b = makeBubble(text);
-  b.position.set(0, 0.62, 0);
+  b.position.set(0, c.userData.bubbleY || 0.62, 0);
   c.add(b);
   c.userData.bubble = b;
   c.userData.bubbleUntil = performance.now() + 8200;
@@ -1043,6 +1390,7 @@ function bindRoom() {
     renderPresence();
     renderAgenda(agendaData);
     refreshOwnerOptions();
+    renderChatTargets();
   });
 
   onValue(ref(db, `council/${ROOM}/agenda`), (snap) => {
@@ -1111,8 +1459,10 @@ function renderPresence() {
     el.className = 'chip' + (id === myId ? ' me' : '');
     const j = document.createElement('span');
     j.className = 'j';
-    j.textContent = v.jamo || 'ㅂ';
+    const icon = avatarIcon(v.name, v.avatar);
+    j.textContent = icon || v.jamo || 'ㅂ';
     j.style.background = `#${col.hex.toString(16).padStart(6, '0')}`;
+    if (icon) j.classList.add('emo');
     const n = document.createElement('span');
     n.textContent = v.name;
     el.append(j, n);
@@ -1211,13 +1561,21 @@ function appendChat(key, v, live) {
   el.className = 'msg' + (mine ? ' mine' : '');
   const ava = document.createElement('div');
   ava.className = 'ava';
-  ava.textContent = v.jamo || 'ㅂ';
+  const cIcon = avatarIcon(v.name, v.avatar);
+  ava.textContent = cIcon || v.jamo || 'ㅂ';
+  if (cIcon) ava.classList.add('emo');
   ava.style.background = `#${colorOf(v.color).hex.toString(16).padStart(6, '0')}`;
   const body = document.createElement('div');
   body.className = 'body';
   const who = document.createElement('div');
   who.className = 'who';
   who.textContent = v.name;
+  if (v.to) {
+    const badge = document.createElement('span');
+    badge.className = 'to';
+    badge.textContent = '→ ' + v.to;
+    who.appendChild(badge);
+  }
   const text = document.createElement('div');
   text.className = 'text';
   text.textContent = v.text;
@@ -1228,8 +1586,17 @@ function appendChat(key, v, live) {
   chatLog.scrollTop = chatLog.scrollHeight;
 
   if (live && v.name) {
-    const target = Object.entries(seats).find(([, s]) => s && s.name === v.name);
-    if (target) speak(target[0], v.text);
+    // 수신 대상이 있으면 그 캐릭터가 받아 읽고, 없으면 보낸 이가 말한다
+    let speakerId = null;
+    if (v.to) {
+      const t = Object.entries(seats).find(([, s]) => s && s.name === v.to);
+      if (t) speakerId = t[0];
+    }
+    if (!speakerId) {
+      const t = Object.entries(seats).find(([, s]) => s && s.name === v.name);
+      if (t) speakerId = t[0];
+    }
+    if (speakerId) speak(speakerId, v.text);
   }
 }
 
@@ -1243,11 +1610,14 @@ function renderMe() {
     nameEl.textContent = '아직 입장 전';
     ownerEl.textContent = '이름과 모습을 정하면 원탁에 자리가 생깁니다.';
     $('#btnLeave').disabled = true;
+    box.classList.remove('emo');
     return;
   }
   const col = colorOf(myIdentity.color);
-  box.textContent = myIdentity.jamo;
+  const icon = avatarIcon(myIdentity.name, myIdentity.avatar);
+  box.textContent = icon || myIdentity.jamo;
   box.style.background = `#${col.hex.toString(16).padStart(6, '0')}`;
+  box.classList.toggle('emo', !!icon);
   nameEl.textContent = myIdentity.name;
   ownerEl.textContent = myIdentity.owner || `${col.name} 깃발 · 원탁 좌석`;
   $('#btnLeave').disabled = false;
@@ -1284,7 +1654,7 @@ $('#btnMe').addEventListener('click', () => { openPanel('me'); });
 /* 초대 주소 */
 $('#btnInvite').addEventListener('click', async () => {
   const url = location.origin + location.pathname;
-  const text = `대항해시대 백작의 회의실에 초대합니다 ⚓\n${url}\n\n이름과 자음을 정하면 원탁에 앉습니다.`;
+  const text = `대항해시대 백작의 회의실에 초대합니다 ⚓\n${url}\n\n이름과 모습을 정하면 원탁에 앉습니다.`;
   try {
     if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
       await navigator.share({ title: '합동 비서실 · 대항해시대 백작의 회의실', text: `대항해시대 백작의 회의실에 초대합니다 ⚓\n${url}`, url });
@@ -1322,29 +1692,124 @@ $('#agendaForm').addEventListener('submit', (e) => {
 });
 
 /* 전서구 */
+let chatTo = '*';
+function renderChatTargets() {
+  const box = $('#chatTo');
+  if (!box) return;
+  const names = [...new Set(Object.values(seats).filter(v => v && v.name).map(v => v.name))];
+  const base = ['카르마', '라마', '하마'];
+  const extra = names.filter(n => !base.includes(n));
+  const opts = [{ v: '*', label: '전체', icon: '📜' }].concat(
+    [...base, ...extra].slice(0, 6).map(n => {
+      const seat = Object.values(seats).find(s => s && s.name === n);
+      return { v: n, label: '@' + n, icon: avatarIcon(n, seat && seat.avatar) || '·' };
+    })
+  );
+  if (chatTo !== '*' && !opts.some(o => o.v === chatTo)) chatTo = '*';
+  box.innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'to-chip' + (chatTo === o.v ? ' on' : '');
+    b.dataset.to = o.v;
+    b.title = o.v === '*' ? '모두에게' : o.v + '에게만';
+    const ic = document.createElement('span');
+    ic.className = 'ic';
+    ic.textContent = o.icon;
+    b.append(ic, document.createTextNode(o.label));
+    b.addEventListener('click', () => {
+      chatTo = o.v;
+      box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.to === chatTo));
+      $('#chatInput').focus();
+    });
+    box.appendChild(b);
+  });
+}
+
 $('#chatForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const input = $('#chatInput');
-  const text = input.value.trim();
+  let text = input.value.trim();
   if (!text) return;
   if (!myIdentity) { toast('먼저 원탁에 앉아 주세요'); openJoin(); return; }
   if (!db) { toast('아직 바다와 연결되지 않았습니다'); return; }
+  // 본문이 @이름 으로 시작하면 그 사람 앞으로
+  let to = chatTo === '*' ? null : chatTo;
+  const m = text.match(/^@(\S+)\s+([\s\S]+)$/);
+  if (m) {
+    const nm = m[1];
+    const known = ['카르마', '라마', '하마'].includes(nm) || Object.values(seats).some(s => s && s.name === nm);
+    if (known) { to = nm; text = m[2].trim(); }
+  }
   push(ref(db, `council/${ROOM}/chat`), {
     name: myIdentity.name,
     jamo: myIdentity.jamo,
+    avatar: myIdentity.avatar || resolveAvatar(myIdentity.name),
     color: myIdentity.color,
     text,
+    to: to || null,
     ts: Date.now()
   }).catch(err => { console.error(err); toast('전서구가 돌아오지 않았습니다'); });
   input.value = '';
+  input.focus();
 });
 
 /* ── 10. 입장 모달 ──────────────────────────────────────── */
 const joinEl = $('#join');
 let pickJamo = 'ㅂ';
 let pickColor = 'blue';
+let pickAvatar = 'jamo';
+
+const ROLE_PRESETS = [
+  { key: 'count', icon: '👑', label: '카르마', sub: '대표', name: '카르마', avatar: 'count', color: 'gold', owner: '대표 · 라마웍스' },
+  { key: 'llama', icon: '🦙', label: '라마', sub: '비서실', name: '라마', avatar: 'llama', color: 'blue', owner: '' },
+  { key: 'hippo', icon: '🦛', label: '하마', sub: '비서실', name: '하마', avatar: 'hippo', color: 'violet', owner: '' },
+  { key: 'jamo', icon: '✨', label: '직접 입력', sub: '자음 피클', name: '', avatar: 'jamo', color: null, owner: '' }
+];
+
+function setAvatarUI() {
+  document.querySelectorAll('#avatarGrid button').forEach(b => b.classList.toggle('on', b.dataset.avatar === pickAvatar));
+  const wrap = $('#jamoWrap');
+  if (wrap) wrap.hidden = pickAvatar !== 'jamo';
+}
+function setJamoUI() {
+  document.querySelectorAll('#jamoGrid button').forEach(b => b.classList.toggle('on', b.dataset.jamo === pickJamo));
+}
+function setColorUI() {
+  document.querySelectorAll('#swatches button').forEach(b => b.classList.toggle('on', b.dataset.color === pickColor));
+}
 
 (function buildJoinUI() {
+  const presets = $('#presets');
+  ROLE_PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'preset';
+    b.dataset.role = p.key;
+    const ic = document.createElement('span');
+    ic.className = 'pic';
+    ic.textContent = p.icon;
+    const tx = document.createElement('span');
+    tx.className = 'ptx';
+    const nm = document.createElement('b');
+    nm.textContent = p.label;
+    const sb = document.createElement('i');
+    sb.textContent = p.sub;
+    tx.append(nm, sb);
+    b.append(ic, tx);
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.preset').forEach(x => x.classList.toggle('on', x === b));
+      $('#joinName').value = p.name;
+      $('#joinOwner').value = p.owner || '';
+      pickAvatar = p.avatar;
+      if (p.color) pickColor = p.color;
+      if (p.avatar === 'jamo' && !p.name) pickJamo = 'ㅂ';
+      setAvatarUI(); setJamoUI(); setColorUI();
+      $('#joinName').focus();
+    });
+    presets.appendChild(b);
+  });
+
   const grid = $('#jamoGrid');
   JAMO_POOL.forEach(j => {
     const b = document.createElement('button');
@@ -1354,10 +1819,33 @@ let pickColor = 'blue';
     if (j === pickJamo) b.classList.add('on');
     b.addEventListener('click', () => {
       pickJamo = j;
-      grid.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.jamo === j));
+      pickAvatar = 'jamo';
+      setJamoUI(); setAvatarUI();
     });
     grid.appendChild(b);
   });
+
+  const ag = $('#avatarGrid');
+  AVATARS.forEach(a => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.avatar = a.key;
+    if (a.key === pickAvatar) b.classList.add('on');
+    const ic = document.createElement('span');
+    ic.className = 'aic';
+    ic.textContent = a.icon;
+    const nm = document.createElement('b');
+    nm.textContent = a.label;
+    const hint = document.createElement('i');
+    hint.textContent = a.hint;
+    b.append(ic, nm, hint);
+    b.addEventListener('click', () => {
+      pickAvatar = a.key;
+      setAvatarUI();
+    });
+    ag.appendChild(b);
+  });
+
   const sw = $('#swatches');
   COLORS.forEach(c => {
     const b = document.createElement('button');
@@ -1368,9 +1856,17 @@ let pickColor = 'blue';
     if (c.key === pickColor) b.classList.add('on');
     b.addEventListener('click', () => {
       pickColor = c.key;
-      sw.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.color === c.key));
+      setColorUI();
     });
     sw.appendChild(b);
+  });
+
+  // 이름을 치면 그에 맞는 모습을 미리 골라 준다
+  $('#joinName').addEventListener('input', () => {
+    const inf = inferAvatarByName($('#joinName').value);
+    if (!inf || inf === pickAvatar) return;
+    pickAvatar = inf;
+    setAvatarUI();
   });
 })();
 
@@ -1380,8 +1876,13 @@ function openJoin(prefill) {
   $('#joinOwner').value = id.owner || '';
   pickJamo = JAMO_POOL.includes(id.jamo) ? id.jamo : 'ㅂ';
   pickColor = COLORS.some(c => c.key === id.color) ? id.color : 'blue';
-  document.querySelectorAll('#jamoGrid button').forEach(b => b.classList.toggle('on', b.dataset.jamo === pickJamo));
-  document.querySelectorAll('#swatches button').forEach(b => b.classList.toggle('on', b.dataset.color === pickColor));
+  pickAvatar = resolveAvatar(id.name, id.avatar);
+  document.querySelectorAll('.preset').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('.preset').forEach(x => {
+    const p = ROLE_PRESETS.find(r => r.key === x.dataset.role);
+    if (p && p.avatar === pickAvatar && (!p.name || p.name === id.name)) x.classList.add('on');
+  });
+  setJamoUI(); setAvatarUI(); setColorUI();
   joinEl.hidden = false;
   setTimeout(() => $('#joinName').focus(), 120);
 }
@@ -1399,32 +1900,42 @@ function doJoin() {
   const name = $('#joinName').value.trim();
   if (!name) { $('#joinName').focus(); $('#joinName').style.outline = '2px solid rgba(168,53,44,.6)'; return; }
   $('#joinName').style.outline = '';
-  const identity = { name, jamo: pickJamo, color: pickColor, owner: $('#joinOwner').value.trim() };
+  const identity = {
+    name,
+    jamo: pickJamo,
+    avatar: resolveAvatar(name, pickAvatar),
+    color: pickColor,
+    owner: $('#joinOwner').value.trim()
+  };
   joinEl.hidden = true;
   joinRoom(identity);
   setView('room');
-  toast(`${name}, 원탁에 앉았습니다 ⚓`);
+  const ic = avatarIcon(identity.name, identity.avatar);
+  toast(`${ic ? ic + ' ' : ''}${name}, 원탁에 앉았습니다 ⚓`);
 }
 
 /* URL 파라미터 · 저장된 신원 */
 (function boot() {
   const q = new URLSearchParams(location.search);
   const saved = (() => { try { return JSON.parse(localStorage.getItem('pc.identity') || 'null'); } catch { return null; } })();
-  const fromUrl = q.get('name') ? {
-    name: q.get('name').slice(0, 12),
+  const urlName = q.get('name');
+  const fromUrl = urlName ? {
+    name: urlName.slice(0, 12),
     jamo: JAMO_POOL.includes(q.get('char')) ? q.get('char') : 'ㅂ',
+    avatar: resolveAvatar(urlName, q.get('avatar')),
     color: COLORS.some(c => c.key === q.get('color')) ? q.get('color') : 'blue',
     owner: (q.get('owner') || '').slice(0, 30)
   } : null;
 
   renderMe();
   refreshOwnerOptions();
+  renderChatTargets();
 
   if (fromUrl) {
     joinRoom(fromUrl);
     if (db) bindRoom();
   } else if (saved && saved.name) {
-    joinRoom(saved);
+    joinRoom({ ...saved, avatar: resolveAvatar(saved.name, saved.avatar) });
   } else {
     openJoin();
   }
@@ -1511,8 +2022,9 @@ function animate() {
     // 눈 깜빡임
     if (now > u.blinkAt) {
       const p = (now - u.blinkAt) / 150;
-      if (p < 1) u.eyes.forEach(e => { e.scale.y = 1.12 * (1 - Math.sin(p * Math.PI) * 0.92); });
-      else { u.eyes.forEach(e => { e.scale.y = 1.12; }); u.blinkAt = now + rand(2600, 6200); }
+      const base = (e) => e.userData.baseY || 1.12;
+      if (p < 1) u.eyes.forEach(e => { e.scale.y = base(e) * (1 - Math.sin(p * Math.PI) * 0.92); });
+      else { u.eyes.forEach(e => { e.scale.y = base(e); }); u.blinkAt = now + rand(2600, 6200); }
     }
 
     // 말풍선
@@ -1525,7 +2037,7 @@ function animate() {
         u.bubble = null;
       } else {
         u.bubble.material.opacity = Math.min(1, left / 900);
-        u.bubble.position.y = 0.62 + Math.min(0.09, (8200 - left) * 0.00012);
+        u.bubble.position.y = (u.bubbleY || 0.62) + Math.min(0.09, (8200 - left) * 0.00012);
         const s = u.bubble.userData.size;
         const pop = Math.min(1, (8200 - left) / 180);
         u.bubble.scale.set(s.w * 0.0034 * (0.9 + pop * 0.1), s.h * 0.0034 * (0.9 + pop * 0.1), 1);

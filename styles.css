@@ -196,6 +196,25 @@ body{
 .chat-form{display:flex;gap:8px;margin-top:10px}
 .chat-form input{flex:1}
 
+/* 전서구 수신 대상 칩 */
+.chat-to{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.to-chip{
+  display:inline-flex;align-items:center;gap:4px;padding:5px 9px;cursor:pointer;
+  border-radius:999px;font-family:inherit;font-size:11px;font-weight:600;color:#5f4a25;
+  background:rgba(255,253,245,.55);border:1px solid rgba(110,80,35,.28);transition:.15s;
+}
+.to-chip:hover{background:#fffdf5;color:#3a2a10}
+.to-chip .ic{font-size:11.5px;line-height:1}
+.to-chip.on{
+  background:linear-gradient(180deg,#f2dda2,#c8a24a);border-color:#8a6a24;color:#241704;
+  box-shadow:0 2px 7px rgba(120,80,20,.28);
+}
+.msg .who .to{
+  margin-left:5px;padding:0 6px;border-radius:999px;font-size:9px;font-weight:700;
+  background:rgba(168,53,44,.12);color:#8c2a22;border:1px solid rgba(168,53,44,.25);
+}
+.chip .j.emo,.msg .ava.emo,.me-avatar.emo{font-size:13px}
+
 /* me pane */
 .me-card{
   display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;
@@ -277,6 +296,36 @@ body{
 }
 .jamo-grid button:hover{background:#fffdf5;transform:translateY(-1px)}
 .jamo-grid button.on{background:linear-gradient(180deg,#f2dda2,#c8a24a);border-color:#8a6a24;box-shadow:0 3px 10px rgba(120,80,20,.35)}
+
+/* 역할 프리셋 */
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.preset{
+  display:flex;align-items:center;gap:8px;padding:8px 9px;cursor:pointer;text-align:left;
+  border-radius:10px;background:rgba(255,253,245,.6);border:1px solid rgba(110,80,35,.3);
+  font-family:inherit;color:#3a2a10;transition:.15s;
+}
+.preset:hover{background:#fffdf5;transform:translateY(-1px);border-color:rgba(120,85,30,.55)}
+.preset.on{background:linear-gradient(180deg,#f4e2b0,#dcc084);border-color:#8a6a24;box-shadow:0 3px 10px rgba(120,80,20,.28)}
+.preset .pic{font-size:17px;line-height:1}
+.preset .ptx{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.preset .ptx b{font-size:12px;font-weight:700;white-space:nowrap}
+.preset .ptx i{font-style:normal;font-size:9.5px;color:#8a6d3d}
+
+/* 모습 고르기 */
+.avatar-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.avatar-grid button{
+  display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 7px;cursor:pointer;
+  border-radius:10px;background:rgba(255,253,245,.65);border:1px solid rgba(110,80,35,.3);
+  font-family:inherit;color:#3a2a10;transition:.15s;
+}
+.avatar-grid button:hover{background:#fffdf5;transform:translateY(-1px)}
+.avatar-grid button.on{background:linear-gradient(180deg,#f2dda2,#c8a24a);border-color:#8a6a24;box-shadow:0 3px 10px rgba(120,80,20,.3)}
+.avatar-grid .aic{font-size:19px;line-height:1.1}
+.avatar-grid b{font-size:11.5px;font-weight:700;white-space:nowrap}
+.avatar-grid i{font-style:normal;font-size:9px;color:#8a6d3d}
+.avatar-grid button.on i{color:#4a350f}
+.jamo-wrap{margin-top:8px}
+.jamo-wrap[hidden]{display:none}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .swatches button{
   width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.6);
