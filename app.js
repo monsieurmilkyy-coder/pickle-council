@@ -1003,9 +1003,8 @@ function setView(name) {
     if (me) {
       const a = Math.atan2(me.position.z, me.position.x);
       const outward = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
-      const p = me.position.clone().add(outward.multiplyScalar(1.9)).add(new THREE.Vector3(0, 1.45, 0));
-      const t = me.position.clone().add(new THREE.Vector3(0, 0.95, 0)).add(outward.clone().multiplyScalar(-2.4));
-      camGoal = { pos: p, target: t };
+      const p = me.position.clone().add(outward.multiplyScalar(1.3)).add(new THREE.Vector3(0, 1.5, 0));
+      camGoal = { pos: p, target: new THREE.Vector3(0, 1.05, 0) };
       return;
     }
     camGoal = { pos: VIEWS.map.pos.clone(), target: VIEWS.map.target.clone() };
