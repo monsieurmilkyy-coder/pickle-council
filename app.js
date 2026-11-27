@@ -1215,35 +1215,21 @@ function buildCount(col) {
   const lens = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), glass);
   lens.position.set(0.062, 0.30, 0.154); headAll.add(lens);
 
-  // 삼각모
+  // 삼각모 (꼭짓점이 앞으로 온 삼각 프리즘 + 금장 테)
   const hat = new THREE.Group();
-  hat.position.set(0, 0.40, 0.0); hat.rotation.x = -0.05;
-  const crown = lowSph(0.145, coatDeep, 1.02, 0.8, 1.02, 14, 10);
-  crown.position.y = 0.05; hat.add(crown);
-  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.2, 0.022, 20), coatDeep);
-  brim.castShadow = true; hat.add(brim);
-  for (let i = 0; i < 3; i++) {
-    const a = i * (Math.PI * 2 / 3) + Math.PI / 2;
-    const pivot = new THREE.Group();
-    pivot.position.set(Math.cos(a) * 0.115, 0.045, Math.sin(a) * 0.115);
-    pivot.rotation.y = -a + Math.PI / 2;
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.026, 0.10), coatDeep);
-    wing.position.set(0, 0.0, 0.02);
-    wing.rotation.x = 0.72;
-    wing.castShadow = true;
-    pivot.add(wing);
-    const wingTrim = new THREE.Mesh(new THREE.BoxGeometry(0.335, 0.012, 0.028), brassMat);
-    wingTrim.position.set(0, 0.015, 0.058);
-    wingTrim.rotation.x = 0.72;
-    pivot.add(wingTrim);
-    hat.add(pivot);
-  }
-  const band = new THREE.Mesh(new THREE.TorusGeometry(0.148, 0.014, 6, 24), accent);
-  band.rotation.x = Math.PI / 2; band.position.y = 0.012; hat.add(band);
-  const cockade = lowSph(0.026, accent, 1, 1, 0.55, 10, 8);
-  cockade.position.set(0, 0.075, 0.15); hat.add(cockade);
-  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.15, 6), white);
-  plume.position.set(-0.135, 0.15, -0.02); plume.rotation.z = 0.45; plume.rotation.x = -0.2; hat.add(plume);
+  hat.position.set(0, 0.40, 0.015); hat.rotation.x = -0.05;
+  const brimTrim = new THREE.Mesh(new THREE.CylinderGeometry(0.232, 0.238, 0.016, 3), brassMat);
+  brimTrim.position.y = -0.026; hat.add(brimTrim);
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.222, 0.05, 3), coatDeep);
+  brim.position.y = 0.0; brim.castShadow = true; hat.add(brim);
+  const crown = lowSph(0.118, coatDeep, 1.0, 0.88, 1.0, 12, 9);
+  crown.position.y = 0.058; hat.add(crown);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.132, 0.013, 6, 24), accent);
+  band.rotation.x = Math.PI / 2; band.position.y = 0.035; hat.add(band);
+  const cockade = lowSph(0.028, accent, 1, 1, 0.6, 10, 8);
+  cockade.position.set(0, 0.048, 0.135); hat.add(cockade);
+  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.17, 6), white);
+  plume.position.set(0.10, 0.135, 0.02); plume.rotation.z = -0.35; plume.rotation.x = -0.12; hat.add(plume);
   headAll.add(hat);
 
   const headPivot = new THREE.Group();
@@ -1471,8 +1457,12 @@ function leaveRoom() {
 /* ── 9. UI ───────────────────────────────────────────────── */
 const esc = (s) => String(s == null ? '' : s);
 
+let presenceSig = '';
 function renderPresence() {
   const list = Object.entries(seats).filter(([, v]) => v && v.name).sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
+  const sig = list.map(([id, v]) => id + ':' + v.name + ':' + v.color + ':' + (v.jamo || '') + ':' + (v.avatar || '')).join('|');
+  if (sig === presenceSig) return;
+  presenceSig = sig;
   presenceEl.innerHTML = '';
   list.forEach(([id, v]) => {
     const col = colorOf(v.color);
@@ -1513,10 +1503,14 @@ const STATUS = {
   '완료': { cls: 'done', next: '대기' }
 };
 
+let agendaSig = '';
 function renderAgenda(data) {
   const items = Object.entries(data || {})
     .map(([id, v]) => ({ id, ...v }))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const sig = items.map(i => [i.id, i.status, i.title, i.owner].join('~')).join('|') + '@' + presenceSig;
+  if (sig === agendaSig) return;
+  agendaSig = sig;
   $('#agendaCount').textContent = items.filter(i => i.status !== '완료').length;
   agendaList.innerHTML = '';
   $('#agendaEmpty').style.display = items.length ? 'none' : 'block';
@@ -1714,6 +1708,7 @@ $('#agendaForm').addEventListener('submit', (e) => {
 
 /* 전서구 */
 let chatTo = '*';
+let chatToSig = '';
 function renderChatTargets() {
   const box = $('#chatTo');
   if (!box) return;
@@ -1727,6 +1722,12 @@ function renderChatTargets() {
     })
   );
   if (chatTo !== '*' && !opts.some(o => o.v === chatTo)) chatTo = '*';
+  const sig = opts.map(o => o.v + ':' + o.icon).join('|');
+  if (sig === chatToSig) {
+    box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.to === chatTo));
+    return;
+  }
+  chatToSig = sig;
   box.innerHTML = '';
   opts.forEach(o => {
     const b = document.createElement('button');
