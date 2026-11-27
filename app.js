@@ -1402,6 +1402,7 @@ function doJoin() {
   const identity = { name, jamo: pickJamo, color: pickColor, owner: $('#joinOwner').value.trim() };
   joinEl.hidden = true;
   joinRoom(identity);
+  setView('room');
   toast(`${name}, 원탁에 앉았습니다 ⚓`);
 }
 
