@@ -1430,6 +1430,14 @@ function doJoin() {
   if (db) bindRoom();
 })();
 
+/* 자리 자가 복구: 탭이 잠깐 얼거나 네트워크가 끊긴 뒤에도 의자가 남아 있게 */
+setInterval(() => {
+  if (db && myIdentity && !seats[myId]) registerSeat();
+}, 20000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && db && myIdentity && !seats[myId]) registerSeat();
+});
+
 /* ── 11. 애니메이션 루프 ────────────────────────────────── */
 const clock = new THREE.Clock();
 let mouseX = 0, mouseY = 0;
