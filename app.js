@@ -394,7 +394,7 @@ rightWall.position.set(7.85, 3.2, 0); rightWall.rotation.y = -Math.PI / 2; right
 });
 const skirt = g3.box(16, 0.34, 0.3, M.darkWood); skirt.position.set(0, 0.17, -6.25); world.add(skirt);
 // 벽 패널 기둥
-[-7.4, -3.7, 0.2, 3.9, 7.4].forEach(x => {
+[-7.6, 2.1, 7.6].forEach(x => {
   const p = g3.box(0.22, 6.2, 0.22, M.darkWood); p.position.set(x, 3.1, -6.3); world.add(p);
 });
 // 천장 들보
@@ -405,41 +405,44 @@ const skirt = g3.box(16, 0.34, 0.3, M.darkWood); skirt.position.set(0, 0.17, -6.
 const ceil = new THREE.Mesh(new THREE.PlaneGeometry(16, 13), new THREE.MeshStandardMaterial({ color: 0x2b1c11, roughness: 1 }));
 ceil.rotation.x = Math.PI / 2; ceil.position.y = 6.3; world.add(ceil);
 
-/* 창문 (왼쪽 벽) */
-const windowGroup = new THREE.Group();
-windowGroup.position.set(-7.8, 2.9, -0.6);
-windowGroup.rotation.y = Math.PI / 2;
-{
-  const pane = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 4.2), new THREE.MeshBasicMaterial({ map: skyTex }));
-  pane.position.z = 0.02;
-  windowGroup.add(pane);
-  // 프레임
-  const frameMat = M.darkWood;
-  const top = g3.box(3.9, 0.22, 0.26, frameMat); top.position.set(0, 2.2, 0.06); windowGroup.add(top);
-  const bot = g3.box(3.9, 0.26, 0.4, frameMat); bot.position.set(0, -2.2, 0.1); windowGroup.add(bot);
-  const left = g3.box(0.22, 4.5, 0.26, frameMat); left.position.set(-1.75, 0, 0.06); windowGroup.add(left);
-  const right = g3.box(0.22, 4.5, 0.26, frameMat); right.position.set(1.75, 0, 0.06); windowGroup.add(right);
-  const mullV = g3.box(0.1, 4.2, 0.14, frameMat); mullV.position.set(0, 0, 0.08); windowGroup.add(mullV);
-  const mullH = g3.box(3.4, 0.1, 0.14, frameMat); mullH.position.set(0, 0.4, 0.08); windowGroup.add(mullH);
-  const mullH2 = g3.box(3.4, 0.1, 0.14, frameMat); mullH2.position.set(0, -1.1, 0.08); windowGroup.add(mullH2);
-  // 커튼
+/* 창문 */
+function buildWindow(w, h) {
+  const g = new THREE.Group();
+  const pane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: skyTex }));
+  pane.position.z = 0.02; g.add(pane);
+  const fm = M.darkWood;
+  const top = g3.box(w + 0.44, 0.2, 0.26, fm); top.position.set(0, h / 2 + 0.06, 0.06); g.add(top);
+  const bot = g3.box(w + 0.44, 0.24, 0.4, fm); bot.position.set(0, -h / 2 - 0.06, 0.1); g.add(bot);
+  const lf = g3.box(0.22, h + 0.32, 0.26, fm); lf.position.set(-w / 2 - 0.1, 0, 0.06); g.add(lf);
+  const rt = g3.box(0.22, h + 0.32, 0.26, fm); rt.position.set(w / 2 + 0.1, 0, 0.06); g.add(rt);
+  const mullV = g3.box(0.09, h, 0.14, fm); mullV.position.set(0, 0, 0.08); g.add(mullV);
+  const mullH = g3.box(w, 0.09, 0.14, fm); mullH.position.set(0, h * 0.3, 0.08); g.add(mullH);
+  const mullH2 = g3.box(w, 0.09, 0.14, fm); mullH2.position.set(0, -h * 0.18, 0.08); g.add(mullH2);
+  const sill = g3.box(w + 0.56, 0.13, 0.54, M.lightWood); sill.position.set(0, -h / 2 - 0.2, 0.2); g.add(sill);
   const curtainMat = new THREE.MeshStandardMaterial({ color: 0x6d1f1c, roughness: 0.95 });
-  [-1.95, 1.95].forEach(x => {
-    const cur = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 4.6, 6, 2), curtainMat);
-    cur.position.set(x, 0.05, 0.3);
+  [-1, 1].forEach(s => {
+    const cur = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.2, h * 1.1, 6, 2), curtainMat);
+    cur.position.set(s * (w / 2 + 0.12), 0.02, 0.3);
     const pos = cur.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 9) * 0.09);
+    for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 10) * 0.085);
     pos.needsUpdate = true; cur.geometry.computeVertexNormals();
-    windowGroup.add(cur);
+    g.add(cur);
   });
-  // 창턱
-  const sill = g3.box(3.7, 0.14, 0.6, M.lightWood); sill.position.set(0, -2.3, 0.22); windowGroup.add(sill);
+  return g;
 }
-world.add(windowGroup);
+// 뒤벽 큰 창 (밤바다)
+const backWindow = buildWindow(3.2, 4.2);
+backWindow.position.set(0.15, 3.05, -6.34);
+world.add(backWindow);
+// 왼쪽 벽 작은 창
+const sideWindow = buildWindow(2.4, 3.2);
+sideWindow.position.set(-7.78, 3.0, -1.2);
+sideWindow.rotation.y = Math.PI / 2;
+world.add(sideWindow);
 
 /* 벽난로 (오른쪽 뒤) */
 const fireplace = new THREE.Group();
-fireplace.position.set(3.9, 0, -6.15);
+fireplace.position.set(4.5, 0, -6.15);
 {
   const stoneMat = M.stone;
   const colL = g3.box(0.5, 2.1, 0.7, stoneMat); colL.position.set(-1.25, 1.05, 0); fireplace.add(colL);
@@ -509,7 +512,7 @@ function buildSconce(x, y, z) {
   g.userData = { flame: fl, light: lt };
   return g;
 }
-const wallSconces = [buildSconce(-1.3, 3.05, -6.18), buildSconce(6.55, 3.05, -6.18)];
+const wallSconces = [buildSconce(-2.15, 3.35, -6.18), buildSconce(7.0, 3.35, -6.18)];
 wallSconces.forEach(s => world.add(s));
 
 /* 책장 */
@@ -535,8 +538,8 @@ function buildShelf(x) {
   }
   return g;
 }
-world.add(buildShelf(-5.6));
-world.add(buildShelf(-3.0));
+world.add(buildShelf(-6.0));
+world.add(buildShelf(-3.6));
 
 /* 샹들리에 */
 const chandelier = new THREE.Group();
@@ -572,9 +575,9 @@ chandelier.position.set(0, 4.35, 0);
 world.add(chandelier);
 
 /* 조명 */
-const moon = new THREE.DirectionalLight(0x9dc0ff, 1.35);
-moon.position.set(-7.2, 5.4, 0.5);
-moon.target.position.set(0.5, 0.8, -0.5);
+const moon = new THREE.DirectionalLight(0x9dc0ff, 1.5);
+moon.position.set(0.8, 6.6, -9.0);
+moon.target.position.set(0, 1.0, 1.2);
 moon.castShadow = true;
 moon.shadow.mapSize.set(2048, 2048);
 moon.shadow.camera.left = -7; moon.shadow.camera.right = 7;
@@ -601,10 +604,9 @@ const beamTex = texOf(256, 512, (c, w, h) => {
     c.fillRect(0, Math.random() * h, w, rand(4, 30));
   }
 });
-const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 7.0), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.26, side: THREE.DoubleSide }));
-beam.position.set(-5.6, 2.3, -0.9);
-beam.rotation.y = Math.PI / 2.5;
-beam.rotation.z = 0.26;
+const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6.4), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.22, side: THREE.DoubleSide }));
+beam.position.set(0.2, 2.7, -3.5);
+beam.rotation.x = -0.46;
 world.add(beam);
 
 /* 먼지 입자 */
