@@ -1354,9 +1354,11 @@ let currentView = 'room';
 /* 세로 화면(폰)은 가로 화각이 좁아 원탁이 잘린다 — 시점을 타깃에서 밀어낸다 */
 function fitPortrait(pos, target) {
   const a = window.innerWidth / Math.max(1, window.innerHeight);
-  if (a >= 1.05 || !window.innerWidth) return pos.clone();
-  const k = Math.min(2.7, Math.pow(1.15 / a, 0.8));
-  return target.clone().add(pos.clone().sub(target).multiplyScalar(k));
+  const t = target.clone();
+  if (a >= 1.05 || !window.innerWidth) return { pos: pos.clone(), target: t };
+  const k = Math.min(2.4, Math.pow(1.15 / a, 0.75));
+  t.y -= 1.3;
+  return { pos: t.clone().add(pos.clone().sub(target).multiplyScalar(k)), target: t };
 }
 function setView(name) {
   currentView = name;
@@ -1370,11 +1372,13 @@ function setView(name) {
       camGoal = { pos: p, target: new THREE.Vector3(0, 1.05, 0) };
       return;
     }
-    camGoal = { pos: fitPortrait(VIEWS.map.pos, VIEWS.map.target), target: VIEWS.map.target.clone() };
+    const f = fitPortrait(VIEWS.map.pos, VIEWS.map.target);
+    camGoal = { pos: f.pos, target: f.target };
     return;
   }
   const v = VIEWS[name] || VIEWS.room;
-  camGoal = { pos: fitPortrait(v.pos, v.target), target: v.target.clone() };
+  const f = fitPortrait(v.pos, v.target);
+  camGoal = { pos: f.pos, target: f.target };
 }
 
 /* ── 8. 실시간 데이터 ────────────────────────────────────── */
