@@ -1626,6 +1626,7 @@ function renderMe() {
     ownerEl.textContent = '이름과 모습을 정하면 원탁에 자리가 생깁니다.';
     $('#btnLeave').disabled = true;
     box.classList.remove('emo');
+    renderSender();
     return;
   }
   const col = colorOf(myIdentity.color);
@@ -1636,6 +1637,53 @@ function renderMe() {
   nameEl.textContent = myIdentity.name;
   ownerEl.textContent = myIdentity.owner || `${col.name} 깃발 · 원탁 좌석`;
   $('#btnLeave').disabled = false;
+  renderSender();
+}
+
+/* 전서구 발신자 표시 — "내가 누구로 말하는지" 항상 보이게 */
+function renderSender() {
+  const box = $('#chatSender');
+  if (!box) return;
+  box.innerHTML = '';
+  const label = document.createElement('span');
+  label.className = 'who-label';
+  if (myIdentity) {
+    const ic = avatarIcon(myIdentity.name, myIdentity.avatar);
+    label.textContent = `발신: ${ic ? ic + ' ' : ''}${myIdentity.name}`;
+  } else {
+    label.textContent = '발신: 아직 입장 전';
+    label.classList.add('off');
+  }
+  box.appendChild(label);
+
+  const isKarma = myIdentity && resolveAvatar(myIdentity.name, myIdentity.avatar) === 'count' && myIdentity.name === '카르마';
+  if (!isKarma) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mini brass';
+    b.textContent = myIdentity ? '👑 카르마로 전환' : '👑 카르마로 입장';
+    b.addEventListener('click', becomeKarma);
+    box.appendChild(b);
+  }
+  const c = document.createElement('button');
+  c.type = 'button';
+  c.className = 'mini';
+  c.textContent = '내 피클 변경';
+  c.addEventListener('click', () => openJoin());
+  box.appendChild(c);
+}
+
+function becomeKarma() {
+  const identity = {
+    name: '카르마',
+    jamo: JAMO_POOL.includes(pickJamo) ? pickJamo : 'ㅂ',
+    avatar: 'count',
+    color: 'gold',
+    owner: '대표 · 라마웍스'
+  };
+  joinRoom(identity);
+  renderSender();
+  toast('👑 카르마로 발신합니다');
 }
 
 function toast(msg) {
@@ -1789,6 +1837,18 @@ const ROLE_PRESETS = [
   { key: 'jamo', icon: '✨', label: '직접 입력', sub: '자음 피클', name: '', avatar: 'jamo', color: null, owner: '' }
 ];
 
+function applyPreset(key) {
+  const p = ROLE_PRESETS.find(r => r.key === key);
+  if (!p) return;
+  document.querySelectorAll('.preset').forEach(x => x.classList.toggle('on', x.dataset.role === p.key));
+  $('#joinName').value = p.name;
+  $('#joinOwner').value = p.owner || '';
+  pickAvatar = p.avatar;
+  if (p.color) pickColor = p.color;
+  if (p.avatar === 'jamo' && !p.name) pickJamo = 'ㅂ';
+  setAvatarUI(); setJamoUI(); setColorUI();
+}
+
 function setAvatarUI() {
   document.querySelectorAll('#avatarGrid button').forEach(b => b.classList.toggle('on', b.dataset.avatar === pickAvatar));
   const wrap = $('#jamoWrap');
@@ -1820,13 +1880,7 @@ function setColorUI() {
     tx.append(nm, sb);
     b.append(ic, tx);
     b.addEventListener('click', () => {
-      document.querySelectorAll('.preset').forEach(x => x.classList.toggle('on', x === b));
-      $('#joinName').value = p.name;
-      $('#joinOwner').value = p.owner || '';
-      pickAvatar = p.avatar;
-      if (p.color) pickColor = p.color;
-      if (p.avatar === 'jamo' && !p.name) pickJamo = 'ㅂ';
-      setAvatarUI(); setJamoUI(); setColorUI();
+      applyPreset(p.key);
       $('#joinName').focus();
     });
     presets.appendChild(b);
@@ -1952,14 +2006,19 @@ function doJoin() {
   renderMe();
   refreshOwnerOptions();
   renderChatTargets();
+  renderSender();
 
   if (fromUrl) {
+    // URL 파라미터가 저장된 신원보다 먼저다 (카르마 전용 링크로 들어오면 무조건 카르마)
     joinRoom(fromUrl);
     if (db) bindRoom();
-  } else if (saved && saved.name) {
+  } else if (saved && saved.name && saved.avatar) {
     joinRoom({ ...saved, avatar: resolveAvatar(saved.name, saved.avatar) });
   } else {
-    openJoin();
+    // 예전 저장값(모습 없이 저장된 라마 등)은 자동 착석하지 않는다
+    openJoin(saved && saved.name ? saved : undefined);
+    const legacyRole = saved && saved.name && ['카르마', '라마', '하마'].includes(saved.name);
+    if (!saved || !saved.name || legacyRole) applyPreset('count');
   }
   if (db) bindRoom();
 })();

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>모바일 미리보기 · 390×844</title>
+<style>
+  html,body{margin:0;background:#0b0d12;color:#9fb0c8;font-family:system-ui,sans-serif}
+  .wrap{padding:16px 20px}
+  .label{font-size:12px;letter-spacing:.08em;margin-bottom:8px}
+  .phone{
+    width:390px;height:844px;overflow:hidden;border-radius:34px;
+    border:8px solid #2a2f3a;background:#000;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+    transform:scale(.9);transform-origin:top left;
+  }
+  iframe{width:390px;height:844px;border:0;display:block;background:#000}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="label">모바일 미리보기 · 390 × 844</div>
+  <div class="phone"><iframe id="f" title="모바일 미리보기"></iframe></div>
+</div>
+<script>
+  document.getElementById('f').src = './index.html' + location.search;
+</script>
+</body>
+</html>

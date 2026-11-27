@@ -193,8 +193,32 @@ body{
 .msg .who{font-size:10px;color:#7a6034;letter-spacing:.02em}
 .msg .text{font-size:12.5px;line-height:1.5;color:#241905;word-break:break-word;margin-top:1px}
 .msg.mine .text{color:#2c1a06}
-.chat-form{display:flex;gap:8px;margin-top:10px}
+.chat-form{display:flex;gap:8px;margin-top:8px}
 .chat-form input{flex:1}
+
+/* 발신자 배지 (입력창 바로 위) */
+.sender{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  margin-top:9px;padding:6px 8px;border-radius:9px;
+  background:rgba(120,90,45,.10);border:1px dashed rgba(120,90,45,.34);
+}
+.sender .who-label{
+  font-size:11px;font-weight:700;color:#3a2a10;letter-spacing:.01em;
+  padding:2px 8px;border-radius:999px;background:rgba(255,253,245,.8);
+  border:1px solid rgba(110,80,35,.28);white-space:nowrap;
+}
+.sender .who-label.off{color:#8a2a22;background:rgba(168,53,44,.09);border-color:rgba(168,53,44,.3)}
+.mini{
+  font-family:inherit;font-size:10.5px;font-weight:600;color:#5f4a25;
+  padding:4px 8px;border-radius:999px;cursor:pointer;
+  background:rgba(255,253,245,.6);border:1px solid rgba(110,80,35,.3);
+  transition:.15s;white-space:nowrap;
+}
+.mini:hover{background:#fffdf5;color:#3a2a10}
+.mini.brass{
+  background:linear-gradient(180deg,#f2dda2,#c8a24a);border-color:#8a6a24;color:#241704;
+  box-shadow:0 2px 7px rgba(120,80,20,.25);
+}
 
 /* 전서구 수신 대상 칩 */
 .chat-to{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
@@ -364,14 +388,31 @@ body{
   .btn{font-size:11px;padding:7px 10px}
   .topbar-actions{margin-left:auto}
   .panel{
-    top:auto;left:10px;right:10px;bottom:10px;width:auto;height:46vh;
+    top:auto;left:8px;right:8px;bottom:8px;width:auto;height:52vh;
     border-radius:14px;
   }
-  .views{left:10px;bottom:calc(46vh + 18px);padding:4px}
+  .pane{padding:10px 11px 11px}
+  .views{left:8px;bottom:calc(52vh + 16px);padding:4px}
   .views button{font-size:10.5px;padding:6px 8px}
-  .join-card{padding:20px 18px 16px}
+  .chat-to{gap:5px;margin-bottom:7px}
+  .to-chip{font-size:10.5px;padding:4px 8px}
+  .sender{gap:5px;padding:5px 6px;margin-top:7px}
+  .sender .who-label{font-size:10.5px;padding:2px 7px}
+  .mini{font-size:10px;padding:4px 7px}
+  .chat-form{gap:6px;margin-top:7px}
+  .chat-form .btn{padding:8px 10px}
+  .join-card{padding:20px 16px 16px}
   .jamo-grid{grid-template-columns:repeat(6,1fr);gap:5px}
   .jamo-grid button{font-size:14px}
+  .presets{gap:6px}
+  .preset{padding:7px 8px}
+  .preset .ptx b{font-size:11px}
+  .avatar-grid button{padding:7px 3px 6px}
+}
+@media (max-width:430px){
+  .brand-text h1{font-size:12px}
+  .presets{grid-template-columns:1fr 1fr}
+  .preset .ptx i{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001s !important;transition-duration:.001s !important}

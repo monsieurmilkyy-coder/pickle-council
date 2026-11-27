@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=18" />
+<link rel="stylesheet" href="styles.css?v=19" />
 <script type="importmap">
 {
   "imports": {
@@ -70,6 +70,7 @@
   <section class="pane" id="pane-chat" role="tabpanel">
     <div class="chat-to" id="chatTo" aria-label="전서구 수신 대상"></div>
     <div class="chat-log" id="chatLog"></div>
+    <div class="sender" id="chatSender" aria-label="발신자"></div>
     <form class="chat-form" id="chatForm">
       <input id="chatInput" type="text" maxlength="140" placeholder="전서구로 한 줄 남기기" autocomplete="off" />
       <button class="btn brass" type="submit">보내기</button>
@@ -150,6 +151,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><p class="noscript">이 회의실은 자바스크립트가 필요합니다.</p></noscript>
 
-<script type="module" src="app.js?v=18"></script>
+<script type="module" src="app.js?v=19"></script>
 </body>
 </html>
