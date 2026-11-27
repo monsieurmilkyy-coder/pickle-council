@@ -949,10 +949,9 @@ function placeChar(group, index, total, instant = false) {
   // 이름표: 원탁 안쪽, 카메라(바깥) 쪽을 향해 살짝 세움
   const plate = group.getObjectByName('plate');
   if (plate) {
-    const pr = TABLE_R - 0.3;
-    plate.position.set(Math.cos(a) * pr - tx, TABLE_Y + 0.09 - 1.16, Math.sin(a) * pr - tz);
-    plate.rotation.y = 0;
-    plate.rotation.x = -0.5;
+    const pr = TABLE_R - 0.45;
+    plate.position.set(Math.cos(a) * pr - tx, TABLE_Y + 0.014 - 1.16, Math.sin(a) * pr - tz);
+    plate.rotation.set(-Math.PI / 2, 0, 0);
   }
 }
 
