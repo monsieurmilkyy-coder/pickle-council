@@ -56,7 +56,7 @@ scene.background = new THREE.Color(0x0a0d12);
 scene.fog = new THREE.FogExp2(0x0a0d12, 0.026);
 
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 220);
-camera.position.set(0, 4.5, 7.9);
+camera.position.set(0, 4.25, 7.35);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1.28, 0.05);
@@ -338,7 +338,7 @@ const globeTex = texOf(512, 256, (c, w, h) => {
 /* ── 3. 재질 ─────────────────────────────────────────────── */
 const M = {
   floor: new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.62, metalness: 0.05 }),
-  wall: new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.92, metalness: 0.02 }),
+  wall: new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.92, metalness: 0.02, color: 0xb59a7c }),
   darkWood: new THREE.MeshStandardMaterial({ color: 0x4a2f1c, roughness: 0.55, metalness: 0.08 }),
   wood: new THREE.MeshStandardMaterial({ color: 0x6b4526, roughness: 0.5, metalness: 0.06 }),
   lightWood: new THREE.MeshStandardMaterial({ color: 0x8a5c33, roughness: 0.55, metalness: 0.05 }),
@@ -495,6 +495,22 @@ fireplace.position.set(3.9, 0, -6.15);
   fireplace.add(fireplace.userData.light);
 }
 world.add(fireplace);
+
+/* 벽 촛대 */
+function buildSconce(x, y, z) {
+  const g = new THREE.Group(); g.position.set(x, y, z);
+  const plate = g3.cyl(0.1, 0.13, 0.05, M.brass, 12); plate.rotation.x = Math.PI / 2; g.add(plate);
+  const arm = g3.cyl(0.024, 0.024, 0.22, M.brass, 8); arm.rotation.x = Math.PI / 2; arm.position.set(0, 0, 0.11); g.add(arm);
+  const cup = g3.cyl(0.09, 0.05, 0.06, M.brass, 12); cup.position.set(0, 0.04, 0.24); g.add(cup);
+  const candle = g3.cyl(0.042, 0.042, 0.24, M.candle, 10); candle.position.set(0, 0.19, 0.24); g.add(candle);
+  const fl = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 8), M.flame.clone());
+  fl.position.set(0, 0.38, 0.24); g.add(fl);
+  const lt = new THREE.PointLight(0xffb070, 5, 6, 2); lt.position.set(0, 0.4, 0.34); g.add(lt);
+  g.userData = { flame: fl, light: lt };
+  return g;
+}
+const wallSconces = [buildSconce(-1.3, 3.05, -6.18), buildSconce(6.55, 3.05, -6.18)];
+wallSconces.forEach(s => world.add(s));
 
 /* 책장 */
 function buildShelf(x) {
@@ -724,8 +740,8 @@ function buildChair() {
   const seat = g3.box(0.62, 0.1, 0.58, M.wood); seat.position.y = 0.56; g.add(seat);
   const cushion = g3.box(0.58, 0.07, 0.54, new THREE.MeshStandardMaterial({ color: 0x5a1f1c, roughness: 0.95 }));
   cushion.position.y = 0.63; g.add(cushion);
-  const back = g3.box(0.62, 0.8, 0.09, M.wood); back.position.set(0, 0.98, -0.25); g.add(back);
-  const backTop = g3.box(0.68, 0.1, 0.12, M.lightWood); backTop.position.set(0, 1.4, -0.25); g.add(backTop);
+  const back = g3.box(0.62, 0.8, 0.09, M.lightWood); back.position.set(0, 0.98, -0.25); g.add(back);
+  const backTop = g3.box(0.68, 0.1, 0.12, M.brass); backTop.position.set(0, 1.4, -0.25); g.add(backTop);
   [-0.24, 0.24].forEach(x => {
     const post = g3.box(0.07, 0.86, 0.07, M.darkWood); post.position.set(x, 0.98, -0.25); g.add(post);
     const legF = g3.box(0.075, 0.58, 0.075, M.darkWood); legF.position.set(x, 0.29, 0.24); g.add(legF);
@@ -901,6 +917,7 @@ function buildCharacter(name, jamo, colorKey) {
     seat: 0, phase: rand(0, 6.28), talkUntil: 0, bubble: null, bubbleUntil: 0,
     blinkAt: rand(2, 5), y: 0
   };
+  root.scale.setScalar(1.14);
   return root;
 }
 
@@ -1442,6 +1459,10 @@ function animate() {
     f.scale.y = 0.9 + Math.sin(t * 7 + i) * 0.18;
   });
   fillWarm.intensity = 5.4 + Math.sin(t * 1.6) * 0.5;
+  wallSconces.forEach((s, i) => {
+    s.userData.light.intensity = 4.6 + Math.sin(t * 7.3 + i * 2) * 0.9;
+    s.userData.flame.scale.y = 0.92 + Math.sin(t * 8 + i) * 0.16;
+  });
 
   // 먼지
   const dp = dust.geometry.attributes.position;
