@@ -348,6 +348,7 @@ const M = {
   stone: new THREE.MeshStandardMaterial({ color: 0x4a453f, roughness: 0.95, metalness: 0.03 }),
   candle: new THREE.MeshStandardMaterial({ color: 0xf0e4c4, roughness: 0.72, metalness: 0.02 }),
   flame: new THREE.MeshBasicMaterial({ color: 0xffbe5c, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }),
+  candleFlame: new THREE.MeshBasicMaterial({ color: 0xff9424, transparent: true, opacity: 0.92 }),
   glass: new THREE.MeshPhysicalMaterial({ color: 0x9fd2e8, roughness: 0.08, metalness: 0, transmission: 0.85, thickness: 0.4, transparent: true, opacity: 0.55 }),
   wax: new THREE.MeshStandardMaterial({ color: 0xa8352c, roughness: 0.42, metalness: 0.05 }),
   paper: new THREE.MeshStandardMaterial({ color: 0xe8dcbe, roughness: 0.85, metalness: 0 }),
@@ -482,7 +483,7 @@ fireplace.position.set(4.5, 0, -6.15);
   [-1.35, 1.35].forEach(x => {
     const c = g3.cyl(0.05, 0.09, 0.3, M.brass); c.position.set(x, 2.56, 0.1); fireplace.add(c);
     const w = g3.cyl(0.06, 0.06, 0.3, M.candle); w.position.set(x, 2.85, 0.1); fireplace.add(w);
-    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 8), M.flame.clone());
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 8), M.candleFlame.clone());
     fl.position.set(x, 3.05, 0.1); fireplace.add(fl);
   });
   // 위 장식: 해골 대신 낡은 시계
@@ -506,7 +507,7 @@ function buildSconce(x, y, z) {
   const arm = g3.cyl(0.024, 0.024, 0.22, M.brass, 8); arm.rotation.x = Math.PI / 2; arm.position.set(0, 0, 0.11); g.add(arm);
   const cup = g3.cyl(0.09, 0.05, 0.06, M.brass, 12); cup.position.set(0, 0.04, 0.24); g.add(cup);
   const candle = g3.cyl(0.042, 0.042, 0.24, M.candle, 10); candle.position.set(0, 0.19, 0.24); g.add(candle);
-  const fl = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 8), M.flame.clone());
+  const fl = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 8), M.candleFlame.clone());
   fl.position.set(0, 0.38, 0.24); g.add(fl);
   const lt = new THREE.PointLight(0xffb070, 5, 6, 2); lt.position.set(0, 0.4, 0.34); g.add(lt);
   g.userData = { flame: fl, light: lt };
@@ -558,7 +559,7 @@ chandelier.position.set(0, 4.35, 0);
     chandelier.add(arm);
     const cup = g3.cyl(0.09, 0.06, 0.09, M.brass, 10); cup.position.set(x, 0.05, z); chandelier.add(cup);
     const candle = g3.cyl(0.045, 0.045, 0.28, M.candle, 10); candle.position.set(x, 0.23, z); chandelier.add(candle);
-    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.14, 8), M.flame.clone());
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.14, 8), M.candleFlame.clone());
     fl.position.set(x, 0.44, z); spikes.add(fl);
   }
   chandelier.userData.flames = spikes.children;
@@ -718,7 +719,7 @@ const table = new THREE.Group();
     const stem = g3.cyl(0.025, 0.035, h, M.brass, 10); stem.position.y = h / 2 + 0.015; g.add(stem);
     const cup = g3.cyl(0.085, 0.05, 0.05, M.brass, 14); cup.position.y = h + 0.03; g.add(cup);
     const candle = g3.cyl(0.042, 0.042, 0.3, M.candle, 12); candle.position.y = h + 0.2; g.add(candle);
-    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.13, 8), M.flame.clone());
+    const fl = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.13, 8), M.candleFlame.clone());
     fl.position.y = h + 0.42; g.add(fl);
     const lt = new THREE.PointLight(0xffb060, 2.6, 3.4, 2); lt.position.y = h + 0.42; g.add(lt);
     g.userData.flame = fl; g.userData.light = lt;
