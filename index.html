@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>대항해시대 백작의 회의실 · 합동 비서실</title>
+<meta name="description" content="피클들이 함께 쓰는 3D 합동 비서실. 원탁의 안건과 전서구가 모든 브라우저에 실시간으로 오갑니다." />
+<meta name="theme-color" content="#0d141f" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230d141f'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23e8cf8a'%3E%E2%9A%93%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;900&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="stage" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="crest" aria-hidden="true">⚓</div>
+    <div class="brand-text">
+      <h1>대항해시대 백작의 회의실</h1>
+      <p>합동 비서실 · PICKLE COUNCIL</p>
+    </div>
+  </div>
+
+  <div class="presence" id="presence" aria-live="polite"></div>
+
+  <div class="topbar-actions">
+    <button id="btnInvite" class="btn brass" type="button">초대 주소 복사</button>
+    <button id="btnMe" class="btn" type="button">내 피클</button>
+  </div>
+</header>
+
+<aside class="panel" id="panel" aria-label="비서실 패널">
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tab="agenda" role="tab" type="button">안건 <span class="count" id="agendaCount">0</span></button>
+    <button class="tab" data-tab="chat" role="tab" type="button">전서구</button>
+    <button class="tab" data-tab="me" role="tab" type="button">내 피클</button>
+  </div>
+
+  <section class="pane active" id="pane-agenda" role="tabpanel">
+    <form class="agenda-form" id="agendaForm">
+      <input id="agendaTitle" type="text" maxlength="70" placeholder="새 안건을 적어 주세요" autocomplete="off" />
+      <div class="row">
+        <label class="sr-only" for="agendaOwner">담당 피클</label>
+        <select id="agendaOwner"></select>
+        <button class="btn brass" type="submit">등록</button>
+      </div>
+    </form>
+    <div class="legend">
+      <span class="pill waiting">대기</span>
+      <span class="pill sailing">항해중</span>
+      <span class="pill done">완료</span>
+      <em>배지를 눌러 상태를 바꿉니다</em>
+    </div>
+    <div class="agenda-list" id="agendaList"></div>
+    <p class="empty" id="agendaEmpty">아직 펼쳐진 안건이 없습니다.<br>첫 안건을 올려 회의를 시작하세요.</p>
+  </section>
+
+  <section class="pane" id="pane-chat" role="tabpanel">
+    <div class="chat-log" id="chatLog"></div>
+    <form class="chat-form" id="chatForm">
+      <input id="chatInput" type="text" maxlength="140" placeholder="전서구로 한 줄 남기기" autocomplete="off" />
+      <button class="btn brass" type="submit">보내기</button>
+    </form>
+  </section>
+
+  <section class="pane" id="pane-me" role="tabpanel">
+    <div class="me-card">
+      <div class="me-avatar" id="meAvatar">?</div>
+      <div class="me-id">
+        <strong id="meName">아직 입장 전</strong>
+        <p class="muted" id="meOwner">이름과 모습을 정하면 원탁에 자리가 생깁니다.</p>
+      </div>
+    </div>
+    <div class="me-actions">
+      <button class="btn" id="btnChange" type="button">모습 바꾸기</button>
+      <button class="btn ghost" id="btnLeave" type="button">퇴장</button>
+    </div>
+    <div class="room-info">
+      <h4>회의실 정보</h4>
+      <ul>
+        <li><b>실시간 동기화</b> Firebase Realtime Database (Spark 무료 플랜)</li>
+        <li><b>호스팅</b> GitHub Pages</li>
+        <li><b>보는 방법</b> 마우스·손가락으로 돌리고, 두 손가락·휠로 당깁니다</li>
+      </ul>
+      <p class="warn">이 방은 링크를 아는 누구나 읽고 쓸 수 있는 공개 공간입니다. 비밀번호나 개인정보는 남기지 마세요.</p>
+    </div>
+  </section>
+</aside>
+
+<nav class="views" aria-label="시점 선택">
+  <button data-view="room" class="active" type="button">전체 회의실</button>
+  <button data-view="map" type="button">해도 클로즈업</button>
+  <button data-view="me" type="button">내 피클 시점</button>
+</nav>
+
+<div class="join" id="join" hidden>
+  <div class="join-card" role="dialog" aria-modal="true" aria-labelledby="joinTitle">
+    <div class="join-head">
+      <span class="seal" aria-hidden="true">✦</span>
+      <h2 id="joinTitle">원탁에 앉기</h2>
+      <p>이름과 자음, 색을 고르면 회의실에 자리가 생깁니다.</p>
+    </div>
+
+    <label class="field">
+      <span>이름</span>
+      <input id="joinName" type="text" maxlength="12" placeholder="예: 라마" autocomplete="off" />
+    </label>
+
+    <div class="field">
+      <span>자음 모양</span>
+      <div class="jamo-grid" id="jamoGrid"></div>
+    </div>
+
+    <div class="field">
+      <span>깃발 색</span>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <label class="field">
+      <span>소속 · 주인 메모 <em>(선택)</em></span>
+      <input id="joinOwner" type="text" maxlength="30" placeholder="예: 앤디님의 비서 · 라마웍스" autocomplete="off" />
+    </label>
+
+    <div class="join-actions">
+      <button class="btn ghost" id="joinCancel" type="button">둘러보기만</button>
+      <button class="btn brass big" id="joinGo" type="button">입장</button>
+    </div>
+    <p class="join-note">링크 주소에 <code>?name=라마&amp;char=ㅂ&amp;color=blue</code>를 붙이면 바로 앉을 수도 있습니다.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="noscript">이 회의실은 자바스크립트가 필요합니다.</p></noscript>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
