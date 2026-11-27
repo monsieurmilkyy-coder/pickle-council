@@ -244,8 +244,8 @@ const mapTex = texOf(1200, 840, (c, w, h) => {
 /* 창밖 밤바다 */
 const skyTex = texOf(640, 800, (c, w, h) => {
   const g = c.createLinearGradient(0, 0, 0, h);
-  g.addColorStop(0, '#050a18'); g.addColorStop(0.42, '#0d2040');
-  g.addColorStop(0.62, '#1b3a55'); g.addColorStop(0.72, '#22475f'); g.addColorStop(1, '#0a1420');
+  g.addColorStop(0, '#081128'); g.addColorStop(0.42, '#173a63');
+  g.addColorStop(0.62, '#2b5c7d'); g.addColorStop(0.72, '#356f8c'); g.addColorStop(1, '#122436');
   c.fillStyle = g; c.fillRect(0, 0, w, h);
   // 별
   for (let i = 0; i < 260; i++) {
@@ -255,11 +255,11 @@ const skyTex = texOf(640, 800, (c, w, h) => {
   }
   // 달
   const mx = w * 0.68, my = h * 0.24;
-  const glow = c.createRadialGradient(mx, my, 0, mx, my, 160);
-  glow.addColorStop(0, 'rgba(255,250,225,.85)'); glow.addColorStop(0.25, 'rgba(230,235,220,.28)');
+  const glow = c.createRadialGradient(mx, my, 0, mx, my, 200);
+  glow.addColorStop(0, 'rgba(255,252,235,.95)'); glow.addColorStop(0.22, 'rgba(240,244,235,.45)');
   glow.addColorStop(1, 'rgba(180,200,255,0)');
-  c.fillStyle = glow; c.beginPath(); c.arc(mx, my, 160, 0, 7); c.fill();
-  c.fillStyle = '#fdf8e2'; c.beginPath(); c.arc(mx, my, 42, 0, 7); c.fill();
+  c.fillStyle = glow; c.beginPath(); c.arc(mx, my, 200, 0, 7); c.fill();
+  c.fillStyle = '#fffdf0'; c.beginPath(); c.arc(mx, my, 54, 0, 7); c.fill();
   c.fillStyle = 'rgba(210,205,180,.5)';
   c.beginPath(); c.arc(mx - 12, my - 8, 8, 0, 7); c.fill();
   c.beginPath(); c.arc(mx + 14, my + 10, 6, 0, 7); c.fill();
@@ -758,7 +758,7 @@ for (let i = 0; i < SEATS; i++) {
   world.add(ch);
   chairGroups.push(ch);
 }
-function chairAngle(i) { return (i / SEATS) * Math.PI * 2 + Math.PI * 1.5; }
+function chairAngle(i) { return (i / SEATS) * Math.PI * 2 + Math.PI * 1.5 + Math.PI / 8; }
 
 /* ── 6. 캐릭터 ───────────────────────────────────────────── */
 const JAMO_SHAPES = {
