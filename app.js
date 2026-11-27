@@ -1021,34 +1021,35 @@ function buildLlama(col) {
   const neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.074, 0.20, 4, 10), wool);
   neck.position.set(0, 0.08, 0.05); neck.rotation.x = -0.17; neck.castShadow = true;
   body.add(neck);
-  // 머리
+  // 머리 (카메라 쪽으로 살짝 돌아보는 피벗)
+  const headAll = new THREE.Group();
   const head = lowSph(0.135, wool, 1.0, 1.06, 0.94, 14, 10);
   head.position.set(0, 0.34, 0.11);
-  body.add(head);
+  headAll.add(head);
   // 머리 위 솜
   const tuft = lowSph(0.055, woolShade, 1, 0.8, 1, 8, 6);
-  tuft.position.set(0, 0.455, 0.10); body.add(tuft);
+  tuft.position.set(0, 0.455, 0.10); headAll.add(tuft);
   // 주둥이
   const muzzle = lowSph(0.072, muzzleMat, 1.18, 0.9, 1.0, 12, 8);
-  muzzle.position.set(0, 0.285, 0.225); body.add(muzzle);
+  muzzle.position.set(0, 0.285, 0.225); headAll.add(muzzle);
   [-1, 1].forEach(s => {
     const n = lowSph(0.014, hoof, 1, 1, 0.8, 6, 5);
-    n.position.set(s * 0.028, 0.30, 0.292); body.add(n);
+    n.position.set(s * 0.028, 0.30, 0.292); headAll.add(n);
   });
   // 쫑긋한 두 귀
   [-1, 1].forEach(s => {
     const outer = new THREE.Mesh(new THREE.CapsuleGeometry(0.033, 0.075, 4, 8), wool);
     outer.position.set(s * 0.072, 0.50, 0.055);
     outer.rotation.z = s * 0.27; outer.rotation.x = -0.12; outer.castShadow = true;
-    body.add(outer);
+    headAll.add(outer);
     const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.05, 4, 8), innerEar);
     inner.position.set(s * 0.077, 0.497, 0.077);
     inner.rotation.z = s * 0.27; inner.rotation.x = -0.12;
-    body.add(inner);
+    headAll.add(inner);
   });
-  const eyes = addEyes(body, { x: 0.063, y: 0.362, z: 0.198, r: 0.049, sy: 1.06 });
-  addBlush(body, 0.113, 0.30, 0.192, 0.042);
-  addSmile(body, 0, 0.243, 0.256, 0.023);
+  const eyes = addEyes(headAll, { x: 0.063, y: 0.362, z: 0.198, r: 0.049, sy: 1.06 });
+  addBlush(headAll, 0.113, 0.30, 0.192, 0.042);
+  addSmile(headAll, 0, 0.243, 0.256, 0.023);
   // 스카프 (고른 색)
   const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.104, 0.031, 8, 20), accent);
   scarf.position.set(0, 0.19, 0.055);
@@ -1060,7 +1061,13 @@ function buildLlama(col) {
   const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.021, 0.085, 4, 8), accent);
   tail.position.set(0.132, 0.088, 0.118); tail.rotation.z = 0.55; body.add(tail);
 
-  return { body, eyes, scale: 1.0 };
+  const headPivot = new THREE.Group();
+  headPivot.position.set(0, 0.06, 0.05);
+  headAll.position.set(0, -0.06, -0.05);
+  headPivot.add(headAll);
+  body.add(headPivot);
+
+  return { body, eyes, head: headPivot, scale: 0.98 };
 }
 
 /* ── 6-5. 🦛 하마 ─────────────────────────────────────────── */
@@ -1085,47 +1092,54 @@ function buildHippo(col) {
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.062, 0.07, 4, 8), skinDeep);
     leg.position.set(x, -0.40, z); leg.castShadow = true; body.add(leg);
   });
-  // 머리 (몸통과 이어진 둥근 덩어리)
+  // 머리 (몸통과 이어진 둥근 덩어리) + 카메라 쪽으로 돌아보는 피벗
+  const headAll = new THREE.Group();
   const head = lowSph(0.225, skin, 1.08, 0.96, 1.02, 14, 10);
-  head.position.set(0, 0.18, 0.05); body.add(head);
+  head.position.set(0, 0.18, 0.05); headAll.add(head);
   // 큰 주둥이
   const muzzle = lowSph(0.155, snout, 1.34, 0.84, 0.94, 14, 10);
-  muzzle.position.set(0, 0.115, 0.235); body.add(muzzle);
+  muzzle.position.set(0, 0.115, 0.235); headAll.add(muzzle);
   // 콧구멍
   [-1, 1].forEach(s => {
     const n = lowSph(0.031, dark, 1, 0.85, 1, 8, 6);
-    n.position.set(s * 0.062, 0.185, 0.352); body.add(n);
+    n.position.set(s * 0.062, 0.185, 0.352); headAll.add(n);
   });
   // 입 · 앞니
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 6, 16, Math.PI), MOUTH_MAT);
   mouth.rotation.z = Math.PI; mouth.rotation.x = 0.25;
-  mouth.position.set(0, 0.088, 0.352); body.add(mouth);
+  mouth.position.set(0, 0.088, 0.352); headAll.add(mouth);
   [-1, 1].forEach(s => {
     const t = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.036, 0.02), tooth);
-    t.position.set(s * 0.02, 0.072, 0.352); t.rotation.z = s * 0.05; body.add(t);
+    t.position.set(s * 0.02, 0.072, 0.352); t.rotation.z = s * 0.05; headAll.add(t);
   });
   // 작은 귀
   [-1, 1].forEach(s => {
     const e = lowSph(0.052, skinDeep, 1, 0.95, 0.65, 10, 8);
-    e.position.set(s * 0.192, 0.375, 0.015); e.rotation.z = s * -0.2; body.add(e);
+    e.position.set(s * 0.192, 0.375, 0.015); e.rotation.z = s * -0.2; headAll.add(e);
     const inner = lowSph(0.028, innerEar, 1, 1, 0.5, 8, 6);
-    inner.position.set(s * 0.198, 0.378, 0.05); body.add(inner);
+    inner.position.set(s * 0.198, 0.378, 0.05); headAll.add(inner);
   });
-  const eyes = addEyes(body, { x: 0.10, y: 0.285, z: 0.198, r: 0.056, sy: 1.0 });
-  addBlush(body, 0.163, 0.215, 0.20, 0.045);
+  const eyes = addEyes(headAll, { x: 0.10, y: 0.285, z: 0.198, r: 0.056, sy: 1.0 });
+  addBlush(headAll, 0.163, 0.215, 0.20, 0.045);
   // 꼬리
   const tail = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 8), skinDeep);
   tail.position.set(0.04, -0.10, -0.31); tail.rotation.x = 1.15; body.add(tail);
   // 색 리본 (고른 색)
   const knotR = lowSph(0.03, accent, 1, 1, 1, 8, 6);
-  knotR.position.set(-0.145, 0.44, 0.06); body.add(knotR);
+  knotR.position.set(-0.145, 0.44, 0.06); headAll.add(knotR);
   [-1, 1].forEach(s => {
     const loop = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.075, 6), accent);
     loop.position.set(-0.145 + s * 0.055, 0.452, 0.06);
-    loop.rotation.z = s * 1.35; body.add(loop);
+    loop.rotation.z = s * 1.35; headAll.add(loop);
   });
 
-  return { body, eyes, scale: 1.08 };
+  const headPivot = new THREE.Group();
+  headPivot.position.set(0, 0.03, 0.03);
+  headAll.position.set(0, -0.03, -0.03);
+  headPivot.add(headAll);
+  body.add(headPivot);
+
+  return { body, eyes, head: headPivot, scale: 1.02 };
 }
 
 /* ── 6-6. 👑 백작 카르마 ─────────────────────────────────── */
@@ -1174,31 +1188,32 @@ function buildCount(col) {
   neck.position.set(0, 0.115, 0.02); body.add(neck);
   const cravat = lowSph(0.062, white, 1.25, 0.9, 0.75, 12, 8);
   cravat.position.set(0, 0.10, 0.10); body.add(cravat);
-  // 머리
+  // 머리 + 카메라 쪽으로 돌아보는 피벗
+  const headAll = new THREE.Group();
   const head = lowSph(0.165, skin, 1.0, 1.02, 0.95, 16, 12);
-  head.position.set(0, 0.285, 0.005); body.add(head);
+  head.position.set(0, 0.285, 0.005); headAll.add(head);
   // 백발 (옆·뒤)
   const hairBack = lowSph(0.13, hair, 1.06, 0.82, 0.8, 12, 9);
-  hairBack.position.set(0, 0.315, -0.10); body.add(hairBack);
+  hairBack.position.set(0, 0.315, -0.10); headAll.add(hairBack);
   [-1, 1].forEach(s => {
     const curl = lowSph(0.062, hair, 0.9, 1.1, 0.85, 10, 8);
-    curl.position.set(s * 0.155, 0.245, -0.02); body.add(curl);
+    curl.position.set(s * 0.155, 0.245, -0.02); headAll.add(curl);
   });
-  const eyes = addEyes(body, { x: 0.062, y: 0.30, z: 0.135, r: 0.042, sy: 1.02, sz: 0.8 });
-  addBlush(body, 0.105, 0.255, 0.135, 0.036);
+  const eyes = addEyes(headAll, { x: 0.062, y: 0.30, z: 0.135, r: 0.042, sy: 1.02, sz: 0.8 });
+  addBlush(headAll, 0.105, 0.255, 0.135, 0.036);
   // 코 · 미소 · 작은 콧수염
   const nose = lowSph(0.018, matOf(0xe7b48f, { roughness: 0.7 }), 1, 0.8, 1, 8, 6);
-  nose.position.set(0, 0.272, 0.157); body.add(nose);
-  addSmile(body, 0, 0.238, 0.152, 0.02);
+  nose.position.set(0, 0.272, 0.157); headAll.add(nose);
+  addSmile(headAll, 0, 0.238, 0.152, 0.02);
   [-1, 1].forEach(s => {
     const mo = lowSph(0.026, hair, 1.5, 0.5, 0.6, 8, 6);
-    mo.position.set(s * 0.03, 0.252, 0.15); mo.rotation.z = s * -0.25; body.add(mo);
+    mo.position.set(s * 0.03, 0.252, 0.15); mo.rotation.z = s * -0.25; headAll.add(mo);
   });
   // 외알 안경(모노클)
   const mono = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.008, 6, 20), brassMat);
-  mono.position.set(0.062, 0.30, 0.157); body.add(mono);
+  mono.position.set(0.062, 0.30, 0.157); headAll.add(mono);
   const lens = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), glass);
-  lens.position.set(0.062, 0.30, 0.154); body.add(lens);
+  lens.position.set(0.062, 0.30, 0.154); headAll.add(lens);
 
   // 삼각모
   const hat = new THREE.Group();
@@ -1229,9 +1244,15 @@ function buildCount(col) {
   cockade.position.set(0, 0.075, 0.15); hat.add(cockade);
   const plume = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.15, 6), white);
   plume.position.set(-0.135, 0.15, -0.02); plume.rotation.z = 0.45; plume.rotation.x = -0.2; hat.add(plume);
-  body.add(hat);
+  headAll.add(hat);
 
-  return { body, eyes, scale: 1.06 };
+  const headPivot = new THREE.Group();
+  headPivot.position.set(0, 0.10, 0.02);
+  headAll.position.set(0, -0.10, -0.02);
+  headPivot.add(headAll);
+  body.add(headPivot);
+
+  return { body, eyes, head: headPivot, scale: 1.02 };
 }
 
 function buildCharacter(name, jamo, colorKey, avatar) {
@@ -1249,7 +1270,7 @@ function buildCharacter(name, jamo, colorKey, avatar) {
 
   // (이름표는 3D에서 쓰지 않습니다 — 상단 접속자 칩과 캐릭터 색으로 구분)
   root.userData = {
-    name, jamo, colorKey, avatar: kind, body, eyes: built.eyes, mat: built.mat || null,
+    name, jamo, colorKey, avatar: kind, body, eyes: built.eyes, head: built.head || null, mat: built.mat || null,
     seat: 0, phase: rand(0, 6.28), talkUntil: 0, bubble: null, bubbleUntil: 0,
     blinkAt: rand(2, 5), y: 0, scale: built.scale || 1.1,
     bubbleY: kind === 'count' ? 0.74 : kind === 'hippo' ? 0.57 : kind === 'llama' ? 0.64 : 0.62
@@ -2018,6 +2039,18 @@ function animate() {
     u.body.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
     u.body.rotation.z = Math.sin(t * 0.9 + u.phase) * 0.035;
     u.body.rotation.y = Math.sin(t * 0.6 + u.phase) * 0.14 + mouseX * 0.12;
+
+    // 머리는 보는 사람 쪽으로 살짝 돌아본다 (동물 얼굴이 보이도록)
+    if (u.head) {
+      const dx = camera.position.x - c.position.x;
+      const dz = camera.position.z - c.position.z;
+      let want = Math.atan2(dx, dz) - c.rotation.y - u.body.rotation.y;
+      while (want > Math.PI) want -= Math.PI * 2;
+      while (want < -Math.PI) want += Math.PI * 2;
+      want = Math.max(-0.8, Math.min(0.8, want));
+      u.head.rotation.y += (want - u.head.rotation.y) * 0.055;
+      u.head.rotation.x += ((-0.05 + Math.sin(t * 1.2 + u.phase) * 0.025) - u.head.rotation.x) * 0.05;
+    }
 
     // 눈 깜빡임
     if (now > u.blinkAt) {
