@@ -1352,12 +1352,13 @@ const VIEWS = {
 };
 let currentView = 'room';
 /* 세로 화면(폰)은 가로 화각이 좁아 원탁이 잘린다 — 시점을 타깃에서 밀어낸다 */
-function fitPortrait(pos, target) {
+function fitPortrait(pos, target, opt = {}) {
   const a = window.innerWidth / Math.max(1, window.innerHeight);
   const t = target.clone();
   if (a >= 1.05 || !window.innerWidth) return { pos: pos.clone(), target: t };
-  const k = Math.min(2.4, Math.pow(1.15 / a, 0.75));
-  t.y -= 1.3;
+  const base = Math.min(2.4, Math.pow(1.15 / a, 0.75));
+  const k = 1 + (base - 1) * (opt.kScale == null ? 1 : opt.kScale);
+  t.y -= (opt.drop || 0);
   return { pos: t.clone().add(pos.clone().sub(target).multiplyScalar(k)), target: t };
 }
 function setView(name) {
@@ -1372,12 +1373,14 @@ function setView(name) {
       camGoal = { pos: p, target: new THREE.Vector3(0, 1.05, 0) };
       return;
     }
-    const f = fitPortrait(VIEWS.map.pos, VIEWS.map.target);
+    const f = fitPortrait(VIEWS.map.pos, VIEWS.map.target, { kScale: 0.3, drop: 0.45 });
     camGoal = { pos: f.pos, target: f.target };
     return;
   }
   const v = VIEWS[name] || VIEWS.room;
-  const f = fitPortrait(v.pos, v.target);
+  const f = name === 'map'
+    ? fitPortrait(v.pos, v.target, { kScale: 0.3, drop: 0.45 })
+    : fitPortrait(v.pos, v.target, { kScale: 1, drop: 3.3 });
   camGoal = { pos: f.pos, target: f.target };
 }
 

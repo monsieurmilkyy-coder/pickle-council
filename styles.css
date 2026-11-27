@@ -388,11 +388,11 @@ body{
   .btn{font-size:11px;padding:7px 10px}
   .topbar-actions{margin-left:auto}
   .panel{
-    top:auto;left:8px;right:8px;bottom:8px;width:auto;height:52vh;
+    top:auto;left:8px;right:8px;bottom:8px;width:auto;height:48vh;
     border-radius:14px;
   }
   .pane{padding:10px 11px 11px}
-  .views{left:8px;bottom:calc(52vh + 16px);padding:4px}
+  .views{left:8px;bottom:calc(48vh + 16px);padding:4px}
   .views button{font-size:10.5px;padding:6px 8px}
   .chat-to{gap:5px;margin-bottom:7px}
   .to-chip{font-size:10.5px;padding:4px 8px}
