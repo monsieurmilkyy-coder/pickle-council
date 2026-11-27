@@ -66,7 +66,7 @@ controls.rotateSpeed = 0.75;
 controls.zoomSpeed = 0.85;
 controls.panSpeed = 0.6;
 controls.minDistance = 2.0;
-controls.maxDistance = 15;
+controls.maxDistance = 24;
 controls.minPolarAngle = 0.22;
 controls.maxPolarAngle = Math.PI * 0.492;
 controls.enablePan = false;
@@ -1350,7 +1350,16 @@ const VIEWS = {
   room: { pos: new THREE.Vector3(0, 4.6, 8.0), target: new THREE.Vector3(0, 1.35, 0) },
   map:  { pos: new THREE.Vector3(0.15, 2.35, 3.05), target: new THREE.Vector3(0, 1.02, -0.08) }
 };
+let currentView = 'room';
+/* 세로 화면(폰)은 가로 화각이 좁아 원탁이 잘린다 — 시점을 타깃에서 밀어낸다 */
+function fitPortrait(pos, target) {
+  const a = window.innerWidth / Math.max(1, window.innerHeight);
+  if (a >= 1.05 || !window.innerWidth) return pos.clone();
+  const k = Math.min(2.7, Math.pow(1.15 / a, 0.8));
+  return target.clone().add(pos.clone().sub(target).multiplyScalar(k));
+}
 function setView(name) {
+  currentView = name;
   document.querySelectorAll('.views button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
   if (name === 'me') {
     const me = characters.get(myId);
@@ -1361,11 +1370,11 @@ function setView(name) {
       camGoal = { pos: p, target: new THREE.Vector3(0, 1.05, 0) };
       return;
     }
-    camGoal = { pos: VIEWS.map.pos.clone(), target: VIEWS.map.target.clone() };
+    camGoal = { pos: fitPortrait(VIEWS.map.pos, VIEWS.map.target), target: VIEWS.map.target.clone() };
     return;
   }
   const v = VIEWS[name] || VIEWS.room;
-  camGoal = { pos: v.pos.clone(), target: v.target.clone() };
+  camGoal = { pos: fitPortrait(v.pos, v.target), target: v.target.clone() };
 }
 
 /* ── 8. 실시간 데이터 ────────────────────────────────────── */
@@ -2012,6 +2021,7 @@ function doJoin() {
     // URL 파라미터가 저장된 신원보다 먼저다 (카르마 전용 링크로 들어오면 무조건 카르마)
     joinRoom(fromUrl);
     if (db) bindRoom();
+    setView('room');
   } else if (saved && saved.name && saved.avatar) {
     joinRoom({ ...saved, avatar: resolveAvatar(saved.name, saved.avatar) });
   } else {
@@ -2157,6 +2167,7 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    setView(currentView === 'me' ? 'room' : currentView);
   }, 120);
 });
 

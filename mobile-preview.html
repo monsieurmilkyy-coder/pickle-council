@@ -22,7 +22,10 @@
   <div class="phone"><iframe id="f" title="모바일 미리보기"></iframe></div>
 </div>
 <script>
-  document.getElementById('f').src = './index.html' + location.search;
+  const q = new URLSearchParams(location.search);
+  if (q.has('clean')) { try { localStorage.removeItem('pc.identity'); } catch (e) {} q.delete('clean'); }
+  const s = q.toString();
+  document.getElementById('f').src = './index.html' + (s ? '?' + s : '');
 </script>
 </body>
 </html>
