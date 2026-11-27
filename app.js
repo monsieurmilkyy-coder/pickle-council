@@ -48,7 +48,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.08;
+renderer.toneMappingExposure = 1.22;
 stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -401,6 +401,9 @@ const skirt = g3.box(16, 0.34, 0.3, M.darkWood); skirt.position.set(0, 0.17, -6.
 [-3.4, 3.4].forEach(x => {
   const b = g3.box(0.5, 0.5, 13, M.darkWood); b.position.set(x, 6.05, 0); world.add(b);
 });
+// 천장
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(16, 13), new THREE.MeshStandardMaterial({ color: 0x2b1c11, roughness: 1 }));
+ceil.rotation.x = Math.PI / 2; ceil.position.y = 6.3; world.add(ceil);
 
 /* 창문 (왼쪽 벽) */
 const windowGroup = new THREE.Group();
@@ -497,9 +500,9 @@ world.add(fireplace);
 function buildShelf(x) {
   const g = new THREE.Group(); g.position.set(x, 0, -6.05);
   const case_ = g3.box(2.3, 3.3, 0.6, M.darkWood); case_.position.y = 1.65; g.add(case_);
-  const inner = g3.box(2.06, 3.06, 0.5, new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 1 }));
+  const inner = g3.box(2.06, 3.06, 0.5, new THREE.MeshStandardMaterial({ color: 0x2c1c10, roughness: 1 }));
   inner.position.set(0, 1.65, 0.06); g.add(inner);
-  const bookColors = [0x6b2a20, 0x2a3f5c, 0x3e5233, 0x6b4d1c, 0x4a2a4a, 0x8a6a2a, 0x243b3b];
+  const bookColors = [0x8c3a2c, 0x36537a, 0x4f6a3f, 0x8a6626, 0x5f3a5f, 0xa9832f, 0x2f4d4d];
   for (let s = 0; s < 4; s++) {
     const shelfY = 0.55 + s * 0.76;
     const board = g3.box(2.1, 0.06, 0.52, M.lightWood); board.position.set(0, shelfY - 0.06, 0.06); g.add(board);
@@ -564,8 +567,9 @@ moon.shadow.camera.near = 0.5; moon.shadow.camera.far = 24;
 moon.shadow.bias = -0.0015;
 scene.add(moon, moon.target);
 
-const hemi = new THREE.HemisphereLight(0x4a6f9c, 0x2a1c10, 0.55);
+const hemi = new THREE.HemisphereLight(0x5d7fa8, 0x3a2818, 0.85);
 scene.add(hemi);
+scene.add(new THREE.AmbientLight(0x30384a, 0.55));
 
 const fillWarm = new THREE.PointLight(0xffb070, 6, 9, 2);
 fillWarm.position.set(-2.6, 3.2, 3.2);
@@ -581,10 +585,10 @@ const beamTex = texOf(256, 512, (c, w, h) => {
     c.fillRect(0, Math.random() * h, w, rand(4, 30));
   }
 });
-const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 7.5), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5, side: THREE.DoubleSide }));
-beam.position.set(-5.2, 2.4, -0.4);
-beam.rotation.y = Math.PI / 2.6;
-beam.rotation.z = 0.22;
+const beam = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 7.0), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.26, side: THREE.DoubleSide }));
+beam.position.set(-5.6, 2.3, -0.9);
+beam.rotation.y = Math.PI / 2.5;
+beam.rotation.z = 0.26;
 world.add(beam);
 
 /* 먼지 입자 */
@@ -731,13 +735,14 @@ function buildChair() {
   return g;
 }
 for (let i = 0; i < SEATS; i++) {
-  const a = (i / SEATS) * Math.PI * 2 + Math.PI * 0.5;
+  const a = chairAngle(i);
   const ch = buildChair();
   ch.position.set(Math.cos(a) * CHAIR_R, 0, Math.sin(a) * CHAIR_R);
   ch.rotation.y = Math.atan2(-Math.cos(a), -Math.sin(a));
   world.add(ch);
   chairGroups.push(ch);
 }
+function chairAngle(i) { return (i / SEATS) * Math.PI * 2 + Math.PI * 1.5; }
 
 /* ── 6. 캐릭터 ───────────────────────────────────────────── */
 const JAMO_SHAPES = {
@@ -887,7 +892,7 @@ function buildCharacter(name, jamo, colorKey) {
   });
   const plateTex = new THREE.CanvasTexture(plateCanvas);
   plateTex.colorSpace = THREE.SRGBColorSpace;
-  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.14), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.45, metalness: 0.35 }));
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.14), new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.5, metalness: 0.2, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.55 }));
   plate.name = 'plate';
   root.add(plate);
 
@@ -904,11 +909,11 @@ const charLayer = new THREE.Group();
 world.add(charLayer);
 
 function seatAngle(i, total) {
-  return (i / Math.max(total, 1)) * Math.PI * 2 + Math.PI * 0.5;
+  return chairAngle(i);
 }
 
 function placeChar(group, index, total, instant = false) {
-  const a = seatAngle(index, total);
+  const a = chairAngle(index);
   const tx = Math.cos(a) * CHAR_R, tz = Math.sin(a) * CHAR_R;
   const ry = Math.atan2(-Math.cos(a), -Math.sin(a));
   if (instant) {
@@ -919,13 +924,13 @@ function placeChar(group, index, total, instant = false) {
   }
   group.userData.target = new THREE.Vector3(tx, 1.16, tz);
   group.userData.targetRy = ry;
-  // 이름표
+  // 이름표: 원탁 안쪽, 카메라(바깥) 쪽을 향해 살짝 세움
   const plate = group.getObjectByName('plate');
   if (plate) {
-    const pr = TABLE_R - 0.35;
-    plate.position.set(Math.cos(a) * pr - tx, TABLE_Y + 0.075 - 1.16, Math.sin(a) * pr - tz);
-    plate.rotation.y = Math.atan2(Math.cos(a), Math.sin(a));
-    plate.rotation.x = -0.42;
+    const pr = TABLE_R - 0.3;
+    plate.position.set(Math.cos(a) * pr - tx, TABLE_Y + 0.09 - 1.16, Math.sin(a) * pr - tz);
+    plate.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)) - ry;
+    plate.rotation.x = -0.38;
   }
 }
 
@@ -945,10 +950,10 @@ function syncCharacters(seatMap) {
       c.userData.id = id;
       charLayer.add(c);
       characters.set(id, c);
-      placeChar(c, i, total, true);
+      placeChar(c, i % SEATS, total, true);
     }
     c.userData.seat = i;
-    placeChar(c, i, total);
+    placeChar(c, i % SEATS, total);
   });
   for (const [id, c] of characters) {
     if (!seen.has(id)) {
