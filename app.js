@@ -1071,15 +1071,30 @@ function bindRoom() {
 }
 
 let agendaData = {};
+let myJoinTs = Date.now();
+let connectedBound = false;
+
+function registerSeat() {
+  if (!db || !myIdentity) return;
+  const mySeat = ref(db, `council/${ROOM}/seats/${myId}`);
+  onDisconnect(mySeat).remove();
+  set(mySeat, { ...myIdentity, ts: myJoinTs });
+}
 
 function joinRoom(identity) {
   myIdentity = identity;
+  myJoinTs = Date.now();
   localStorage.setItem('pc.identity', JSON.stringify(identity));
   if (!db) { syncCharacters({ [myId]: { ...identity, ts: Date.now() } }); renderMe(); return; }
   bindRoom();
-  const mySeat = ref(db, `council/${ROOM}/seats/${myId}`);
-  update(mySeat, { ...identity, ts: Date.now() });
-  onDisconnect(mySeat).remove();
+  registerSeat();
+  // 네트워크가 끊겼다 돌아오면 자리를 다시 세운다
+  if (!connectedBound) {
+    connectedBound = true;
+    onValue(ref(db, '.info/connected'), (snap) => {
+      if (snap.val() === true) registerSeat();
+    });
+  }
   renderMe();
 }
 
